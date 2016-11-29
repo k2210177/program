@@ -27,17 +27,17 @@
 using namespace std;
 
 #include <unistd.h>
-#include "Navio/PWM.h"
-#include "Navio/RGBled.h"
-#include "Navio/Util.h"
+#include "../Navio2/C++/Navio/PWM.h"
+#include "../Navio2/C++/Navio/RGBled.h"
+#include "../Navio2/C++/Navio/Util.h"
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/time.h>
-#include "Navio/MPU9250.h"
-#include "Navio/LSM9DS1.h"
+#include "../Navio2/C++/Navio/MPU9250.h"
+#include "../Navio2/C++/Navio/LSM9DS1.h"
 #include "AHRS.hpp"
 
 #define RIGHT_MOTOR 0
@@ -196,7 +196,7 @@ int main()
 {
 
 	char sensor_name[] = "mpu";
-	float rroll = 0.0 , rpitch = 0.0;
+	float rroll = 0.0 , rpitch = 0.0 , ryaw = 0.0;
 	float rollerr , pitcherr , yawerr;
 	float prollerr[5] , ppitcherr[5] , pyawerr[5];
 	float srollerr = 0.0 , spitcherr = 0.0 , syawerr = 0.0;
@@ -355,10 +355,10 @@ int main()
 			if ( cnt > 4 ) cnt = 0;
 
 			else {
-				R = uthrottle - uroll  + uyaw; 
-				L = uthrottle + uroll  + uyaw;
-				F = uthrottle + upitch - uyaw;
-				B = uthrottle - upitch - uyaw;
+				R = - uroll  + uyaw; 
+				L =   uroll  + uyaw;
+				F =   upitch - uyaw;
+				B = - upitch - uyaw;
 			}
 
 			//Limitter
@@ -376,11 +376,10 @@ int main()
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
 			pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
+			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
 					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
 					,roll ,pitch ,yaw ,rroll ,rpitch ,ryaw
-					,stickRx ,stickRy ,stickLx ,stickLy
 					,R ,L ,F ,B
 			       );
 			fs << outstr << endl;

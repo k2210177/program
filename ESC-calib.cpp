@@ -14,8 +14,8 @@ sudo ./Servo
 */
 
 #include <unistd.h>
-#include "Navio/PWM.h"
-#include "Navio/Util.h"
+#include "../Navio2/C++/Navio/PWM.h"
+#include "../Navio2/C++/Navio/Util.h"
 
 #define PWM_OUTPUT 0
 #define SERVO_MIN 1.000 /*mS*/

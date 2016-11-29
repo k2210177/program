@@ -1,5 +1,5 @@
 CXX ?= g++
-NAVIO = ../../Navio
+NAVIO = ../Navio2/C++/Navio
 INCLUDES = -I ../..
 
 all:

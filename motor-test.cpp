@@ -11,9 +11,9 @@
 
 using namespace std;
 
-#include "Navio/PWM.h"
-#include "Navio/RGBled.h"
-#include "Navio/Util.h"
+#include "../Navio2/C++/Navio/PWM.h"
+#include "../Navio2/C++/Navio/RGBled.h"
+#include "../Navio2/C++/Navio/Util.h"
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

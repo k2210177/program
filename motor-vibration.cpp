@@ -25,16 +25,16 @@
 using namespace std;
 
 #include <unistd.h>
-#include "Navio/PWM.h"
-#include "Navio/Util.h"
+#include "../Navio2/C++/Navio/PWM.h"
+#include "../Navio2/C++/Navio/Util.h"
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/time.h>
-#include "Navio/MPU9250.h"
-#include "Navio/LSM9DS1.h"
+#include "../Navio2/C++/Navio/MPU9250.h"
+#include "../Navio2/C++/Navio/LSM9DS1.h"
 #include "AHRS.hpp"
 
 #define RIGHT_MOTOR 0
