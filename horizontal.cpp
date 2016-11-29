@@ -344,8 +344,9 @@ int main()
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
 			pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f"
+			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
+					,roll ,pitch ,yaw
 					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
 					,R ,L ,F ,B
 			       );
