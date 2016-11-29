@@ -325,8 +325,8 @@ int main()
 			//------------- Stabilize Control -----------------
 
 			R =   roll  * 0.0222 + 1.00; 
-			L = - roll  * 0.0222 + 1.12;
-			F = - pitch * 0.0222 + 1.12;
+			L = - roll  * 0.0222 + 1.00;
+			F = - pitch * 0.0222 + 1.00;
 			B =   pitch * 0.0222 + 1.00;
 
 			//Limitter
