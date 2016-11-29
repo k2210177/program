@@ -1,18 +1,3 @@
-
-/*
-   Itolab drone motor control sample
-
-   build
-   make
-
-   Usage
-   sudo sixad -start &
-   sudo ./dronemotor
-
-   Copyright K.ITO,2016
-
- */
-
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -20,12 +5,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <linux/joystick.h>
 #include <fstream>
+#define JOY_DEV "/dev/input/js0"
 
 using namespace std;
 
-#include <unistd.h>
 #include "Navio/PWM.h"
+#include "Navio/RGBled.h"
 #include "Navio/Util.h"
 #include <stdio.h>
 #include <sys/socket.h>
@@ -33,28 +20,12 @@ using namespace std;
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/time.h>
-#include "Navio/MPU9250.h"
-#include "Navio/LSM9DS1.h"
-#include "AHRS.hpp"
 
-#define RIGHT_MOTOR 0
-#define LEFT_MOTOR 1
-#define FRONT_MOTOR 2
-#define REAR_MOTOR 3
+#define MOTOR 0
 #define SERVO_MIN 1.0 /*mS*/
 #define SERVO_MAX 2.0 /*mS*/
 #define G_SI 9.80665
 #define PI   3.14159
-
-// Objects
-
-InertialSensor *imu;
-AHRS    ahrs;   // Mahony AHRS
-
-// Sensor data
-
-float ax, ay, az;
-float gx, gy, gz;
 
 // Timing data
 
@@ -66,163 +37,53 @@ unsigned long previoustime, currenttime;
 float dtsumm = 0;
 int isFirst = 1;
 
-
-//============================= Initial setup =================================
-
-void imuSetup()
-{
-	//----------------------- MPU initialization ------------------------------
-
-	imu->initialize();
-
-	//-------------------------------------------------------------------------
-
-	printf("Beginning Gyro calibration...\n");
-	for(int i = 0; i<100; i++)
-	{
-		imu->update();
-		imu->read_gyroscope(&gx, &gy, &gz);
-
-		gx *= 180 / PI;
-		gy *= 180 / PI;
-		gz *= 180 / PI;
-
-		offset[0] += (-gx*0.0175);
-		offset[1] += (-gy*0.0175);
-		offset[2] += (-gz*0.0175);
-		usleep(10000);
-	}
-	offset[0]/=100.0;
-	offset[1]/=100.0;
-	offset[2]/=100.0;
-
-	printf("Offsets are: %f %f %f\n", offset[0], offset[1], offset[2]);
-	ahrs.setGyroOffset(offset[0], offset[1], offset[2]);
-}
-
-
-void imuLoop()
-{
-	//----------------------- Calculate delta time ----------------------------
-
-	gettimeofday(&tv,NULL);
-	previoustime = currenttime;
-	currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
-	dt = (currenttime - previoustime) / 1000000.0;
-	if(dt < 1/1300.0) usleep((1/1300.0-dt)*1000000);
-	gettimeofday(&tv,NULL);
-	currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
-	dt = (currenttime - previoustime) / 1000000.0;
-
-	//-------- Read raw measurements from the MPU and update AHRS --------------
-
-	// Accel + gyro.
-	imu->update();
-	imu->read_accelerometer(&ax, &ay, &az);
-	imu->read_gyroscope(&gx, &gy, &gz);
-
-	ax /= G_SI;
-	ay /= G_SI;
-	az /= G_SI;
-	gx *= 180 / PI;
-	gy *= 180 / PI;
-	gz *= 180 / PI;
-
-	ahrs.updateIMU(ax, ay, az, gx*0.0175, gy*0.0175, gz*0.0175, dt);
-
-	//------------------- Discard the time of the first cycle -----------------
-
-	if (!isFirst)
-	{
-		if (dt > maxdt) maxdt = dt;
-		if (dt < mindt) mindt = dt;
-	}
-	isFirst = 0;
-
-	//------------- Console and network output with a lowered rate ------------
-#if 1
-	dtsumm += dt;
-	if(dtsumm > 0.05)
-	{
-		dtsumm = 0;
-	}
-#endif
-}
-
-
-InertialSensor* create_inertial_sensor(char *sensor_name)
-{
-	InertialSensor *imu;
-
-	if (!strcmp(sensor_name, "mpu")) {
-		printf("Selected: MPU9250\n");
-		imu = new MPU9250();
-	}
-	else if (!strcmp(sensor_name, "lsm")) {
-		printf("Selected: LSM9DS1\n");
-		imu = new LSM9DS1();
-	}
-	else {
-		return NULL;
-	}
-
-	return imu;
-}
-
 //==================== Start Main function =========================
 
 int main()
 {
-	char sensor_name[]="mpu";
-	
-	//-------- IMU setting -------------------
-	imu = create_inertial_sensor(sensor_name);
 
-	if (!imu) {
-		printf("Wrong sensor name. Select: mpu or lsm\n");
-		return EXIT_FAILURE;
-	}
-
-	if (!imu->probe()) {
-		printf("Sensor not enable\n");
-		return EXIT_FAILURE;
-	}
-
-	imuSetup();
-
+	int breakflag=0;
+	float M = 1.0;
+	short cnt = 0;
 
 	PWM pwm;
+	RGBled led;
+	js_event js;
 
-	if (check_apm()) {
-		return 1;
+	if(!led.initialize()) return EXIT_FAILURE;
+
+
+	//-------- PS3 Controller setting --------
+	int joy_fd(-1), num_of_axis(0), num_of_buttons(0);
+	char name_of_joystick[80];
+	vector<char> joy_button;
+	vector<int> joy_axis;
+
+	if((joy_fd = open(JOY_DEV, O_RDONLY)) < 0) {
+		printf("Failed to open %s", JOY_DEV);
+		cerr << "Failed to open " << JOY_DEV << endl;
+		return -1;
 	}
 
-	
-	for (int i=0; i<10000; i++){
-		imuLoop();
-		usleep(1000);
-		if(i%1000==0){
-			printf("#");
-			fflush(stdout);
-				
-		}
-	}
-	
-	
-	for (int i=0;i<4;i++){
-		if (!pwm.init(i)) {
-			fprintf(stderr, "Output Enable not set. Are you root?\n");
-			return 0;
-		}
-		pwm.enable(i);
-		pwm.set_period(i, 500);
-	}
-	printf("\nReady to Fly !\n");
+	ioctl(joy_fd, JSIOCGAXES, &num_of_axis);
+	ioctl(joy_fd, JSIOCGBUTTONS, &num_of_buttons);
+	ioctl(joy_fd, JSIOCGNAME(80), &name_of_joystick);
 
-	////// Log system setting
-	char filename[] = "motortest.txt";
-	char outstr[255];
-	std::ofstream fs(filename);
+	joy_button.resize(num_of_buttons, 0);
+	joy_axis.resize(num_of_axis, 0);
+
+	printf("Joystick: %s axis: %d buttons: %d\n", name_of_joystick, num_of_axis, num_of_buttons);
+
+	fcntl(joy_fd, F_SETFL, O_NONBLOCK); // using non-blocking mode
+
+	if (!pwm.init(0)) {
+		fprintf(stderr, "Output Enable not set. Are you root?\n");
+		return 0;
+	}
+	pwm.enable(0);
+	pwm.set_period(0, 500);
+
+	printf("\nStart thrust test !\n");
 
 	///// Clock setting
 	struct timeval tval;
@@ -233,102 +94,197 @@ int main()
 	past_time = now_time;
 	interval = now_time - past_time;
 
-	int n = 0;
-	double t = 0.0;
-	float u[4]; 
-	int i = 0;
-
 //==========================  Main Loop ==============================
-	
-	while(n<4){
+	while(true) {
 
-		t = 0.0;
+		led.setColor(Colors::Red);
 
-		while(t<10000000.0) {
+		while(true) {
 
-			do{
-				gettimeofday(&tval,NULL);
-				past_time = now_time;
-				now_time=1000000 * tval.tv_sec + tval.tv_usec;
-				interval = interval + now_time - past_time;
-			}while(interval<=2000);
+			gettimeofday(&tval,NULL);
+			past_time = now_time;
+			now_time=1000000 * tval.tv_sec + tval.tv_usec;
+			interval = now_time - past_time;
 
-			imuLoop();
+			//js_event js;
 
-			t = t + interval;
+			read(joy_fd, &js, sizeof(js_event));
 
-			if ( t > 10000000.0 ){
-				t=10000000.0;
+			switch(js.type & ~JS_EVENT_INIT) {
+				case JS_EVENT_AXIS:
+					joy_axis[(int)js.number] = js.value;
+					break;
+				case JS_EVENT_BUTTON:
+					joy_button[(int)js.number] = js.value;
+					//printf("%5d\n %5d\n",(int)js.number,js.value);
+					break;
 			}
 
-			u[n]= t / 10000000.0 + 1.0;
+			if (joy_button[12]==1){
 
-			if ( n == 0 ) {
-				u[n] = u[n] + 0.130;
-			}
-			if ( n == 1 ) {
-				u[n] = u[n] + 0.055;
-			}
-			if ( n == 2 ) {
-				u[n] = u[n] + 0.000;
-			}
-			if ( n == 3 ) {
-				u[n] = u[n] + 0.095;
-			}
+				if (joy_button[4]==1){
 
-			if ( u[n] > 2.0 ){
-				u[n] = 2.0;
-			}
+					M = M + 0.1;
+					printf ( "PWM UP : %f\n" ,M );
 
-			for(i=0;i<4;i++){
-				if(i==n){
-					i++;
 				}
-				u[i]=1.0;
+				if (joy_button[6]==1){
+
+					M = M - 0.1;
+					printf ( "PWM down : %f\n" ,M );
+
+				}
+
 			}
-		
-			pwm.set_duty_cycle(RIGHT_MOTOR, u[0]);
-			pwm.set_duty_cycle(LEFT_MOTOR , u[1]);
-			pwm.set_duty_cycle(FRONT_MOTOR, u[2]);
-			pwm.set_duty_cycle(REAR_MOTOR , u[3]);
+			if (joy_button[13]==1){
 
-			sprintf(outstr,"%lu %lu %f %f %f",now_time,interval,t,gz,u[n]);
-			fs << outstr << endl;
+				if (joy_button[4]==1){
 
-			interval = 0;
-	
-		}
+					M = M + 0.001;
+					printf ( "PWM UP : %f\n" ,M );
 
-		t = 0.0;
+				}
+				if (joy_button[6]==1){
 
-		for(i=0;i<4;i++){
-			u[i]=1.0;
-		}
+					M = M - 0.001;
+					printf ( "PWM down : %f\n" ,M );
 
-		pwm.set_duty_cycle(RIGHT_MOTOR, u[0]);
-		pwm.set_duty_cycle(LEFT_MOTOR , u[1]);
-		pwm.set_duty_cycle(FRONT_MOTOR, u[2]);
-		pwm.set_duty_cycle(REAR_MOTOR , u[3]);
+				}
 
-		do{
+			}
+			if (joy_button[14]==1){
+
+				if (joy_button[4]==1){
+
+					M = M + 0.0001;
+					printf ( "PWM UP : %f\n" ,M );
+
+				}
+				if (joy_button[6]==1){
+
+					M = M - 0.0001;
+					printf ( "PWM down : %f\n" ,M );
+
+				}
+
+			}
+			if (joy_button[15]==1){
+
+				if (joy_button[4]==1){
+
+					M = M + 0.00001;
+					printf ( "PWM UP : %f\n" ,M );
+
+				}
+				if (joy_button[6]==1){
+
+					M = M - 0.0001;
+					printf ( "PWM down : %f\n" ,M );
+
+				}
+
+			}
+
+			if (joy_button[11]==1){
+
+				cnt++;
+
+				if (cnt>30){
+
+					M = 2.0;
+					printf( "Set PWM MAX!\n" );
+					cnt = 0;
+
+				}
+
+			}
+			if (joy_button[10]==1){
+
+				cnt++;
+
+				if (cnt>30){
+
+					M = 1.0;
+					printf( "Set PWM MIN!\n" );
+					cnt = 0;
+
+				}
+
+			}
+
+			if ( M > 2.0 ) M = 2.0;
+			if ( M < 1.0 ) M = 1.0;
+
+			pwm.set_duty_cycle(MOTOR, M);
+
+			if (joy_button[3]==1){
+				break;
+			}
+
 			do{
 				gettimeofday(&tval,NULL);
-				past_time = now_time;
-				now_time=1000000 * tval.tv_sec + tval.tv_usec;
-				interval = interval + now_time - past_time;
-			}while(interval<=2000);
-			t = t + interval;
-			imuLoop();
-			sprintf(outstr,"%lu %lu %f %f %f",now_time,interval,t,gz,u[n]);
-			fs << outstr << endl;
-			interval = 0;
-		}while(t<=5000000.0);
+				interval=1000000 * tval.tv_sec + tval.tv_usec - now_time;
 
-		n++;
+			}while(interval<2000);
 
+		}
+		led.setColor(Colors::Blue);
+		while (joy_button[3]==1){
+			read(joy_fd, &js, sizeof(js_event));
+			
+			switch(js.type & ~JS_EVENT_INIT) {
+				case JS_EVENT_AXIS:
+					joy_axis[(int)js.number] = js.value;
+					break;
+				case JS_EVENT_BUTTON:
+					joy_button[(int)js.number] = js.value;
+					//printf("%5d\n %5d\n",(int)js.number,js.value);
+					break;
+			}
+		}
+		while (true){
+			read(joy_fd, &js, sizeof(js_event));
+			
+			switch(js.type & ~JS_EVENT_INIT) {
+				case JS_EVENT_AXIS:
+					joy_axis[(int)js.number] = js.value;
+					break;
+				case JS_EVENT_BUTTON:
+					joy_button[(int)js.number] = js.value;
+					//printf("%5d\n %5d\n",(int)js.number,js.value);
+					break;
+			}
+			
+
+			if (joy_button[3]==1){
+				break;
+			}
+			if (joy_button[0]==1){
+				breakflag=1;
+				break;
+			}
+			else breakflag = 0;
+		}
+		if (breakflag == 1)break;
+		else breakflag = 0;
+
+		while (joy_button[3]==1){
+			read(joy_fd, &js, sizeof(js_event));
+			
+			switch(js.type & ~JS_EVENT_INIT) {
+				case JS_EVENT_AXIS:
+					joy_axis[(int)js.number] = js.value;
+					break;
+				case JS_EVENT_BUTTON:
+					joy_button[(int)js.number] = js.value;
+					//printf("%5d\n %5d\n",(int)js.number,js.value);
+					break;
+			}
+		}
 	}
-		
-	fs.close();
+
+	led.setColor(Colors::Green);
+
 	return 0;
 
 }

@@ -233,36 +233,98 @@ int main()
 	past_time = now_time;
 	interval = now_time - past_time;
 
+	int n = 0;
 	double t = 0.0;
-	float M;
+	float u[4]; 
+	int i = 0;
 
 //==========================  Main Loop ==============================
 	
-	while( t < 10000000.0) {
+	while(n<4){
 
-		do{
-			gettimeofday(&tval,NULL);
-			past_time = now_time;
-			now_time=1000000 * tval.tv_sec + tval.tv_usec;
-			interval = interval + now_time - past_time;
-		}while(interval<=2000);
+		t = 0.0;
 
-		imuLoop();
+		while(t<10000000.0) {
 
-		t = t + interval;
+			do{
+				gettimeofday(&tval,NULL);
+				past_time = now_time;
+				now_time=1000000 * tval.tv_sec + tval.tv_usec;
+				interval = interval + now_time - past_time;
+			}while(interval<=2000);
 
-		if ( t > 10000000.0 ){
+			imuLoop();
 
-			t = 10000000.0;
+			t = t + interval;
 
+			if ( t > 10000000.0 ){
+				t=10000000.0;
+			}
+
+			u[n]= t / 10000000.0 + 1.0;
+
+			if ( n == 0 ) {
+				u[n] = u[n] + 0.130;
+			}
+			if ( n == 1 ) {
+				u[n] = u[n] + 0.055;
+			}
+			if ( n == 2 ) {
+				u[n] = u[n] + 0.000;
+			}
+			if ( n == 3 ) {
+				u[n] = u[n] + 0.095;
+			}
+
+			if ( u[n] > 2.0 ){
+				u[n] = 2.0;
+			}
+
+			for(i=0;i<4;i++){
+				if(i==n){
+					i++;
+				}
+				u[i]=1.0;
+			}
+		
+			pwm.set_duty_cycle(RIGHT_MOTOR, u[0]);
+			pwm.set_duty_cycle(LEFT_MOTOR , u[1]);
+			pwm.set_duty_cycle(FRONT_MOTOR, u[2]);
+			pwm.set_duty_cycle(REAR_MOTOR , u[3]);
+
+			sprintf(outstr,"%lu %lu %f %f %f",now_time,interval,t,gz,u[n]);
+			fs << outstr << endl;
+
+			interval = 0;
+	
 		}
 
-		M = t / 10000000.0 + 1.0;
-		
-		pwm.set_duty_cycle(RIGHT_MOTOR, M);
+		t = 0.0;
 
-		sprintf(outstr,"%lu %lu %f %f",now_time,interval,t,M);
-		fs << outstr << endl;
+		for(i=0;i<4;i++){
+			u[i]=1.0;
+		}
+
+		pwm.set_duty_cycle(RIGHT_MOTOR, u[0]);
+		pwm.set_duty_cycle(LEFT_MOTOR , u[1]);
+		pwm.set_duty_cycle(FRONT_MOTOR, u[2]);
+		pwm.set_duty_cycle(REAR_MOTOR , u[3]);
+
+		do{
+			do{
+				gettimeofday(&tval,NULL);
+				past_time = now_time;
+				now_time=1000000 * tval.tv_sec + tval.tv_usec;
+				interval = interval + now_time - past_time;
+			}while(interval<=2000);
+			t = t + interval;
+			imuLoop();
+			sprintf(outstr,"%lu %lu %f %f %f",now_time,interval,t,gz,u[n]);
+			fs << outstr << endl;
+			interval = 0;
+		}while(t<=5000000.0);
+
+		n++;
 
 	}
 		
