@@ -196,11 +196,6 @@ int main()
 {
 
 	char sensor_name[] = "mpu";
-	float rroll = 0.0 , rpitch = 0.0 , ryaw = 0.0;
-	float rollerr , pitcherr , yawerr;
-	float prollerr[5] , ppitcherr[5] , pyawerr[5];
-	float srollerr = 0.0 , spitcherr = 0.0 , syawerr = 0.0;
-	float uroll , upitch , uyaw;
 	float R , L , F , B;
 	int cnt = 0;
 	int breakflag = 0;
@@ -329,37 +324,10 @@ int main()
 
 			//------------- Stabilize Control -----------------
 
-			rollerr  = rroll  - roll;
-			pitcherr = rpitch - pitch;
-			yawerr   = ryaw   + gz;
-
-			srollerr  = srollerr  + rollerr  / 2.0;
-			spitcherr = spitcherr + pitcherr / 2.0;
-			//syawerr   = 0.0;
-
-			if ( srollerr  >  20000.0 ) srollerr  =  20000.0;
-			if ( srollerr  < -20000.0 ) srollerr  = -20000.0;
-			if ( spitcherr >  20000.0 ) spitcherr =  20000.0;
-			if ( spitcherr < -20000.0 ) spitcherr = -20000.0;
-			//if ( syawerr   > 1.0 )      syawerr   =  1.0;
-			//if ( syawerr   < 0.0 )      syawerr   =  0.0;
-
-			float uroll  = 0.01 * rollerr  + 0.2   * ( rollerr  - prollerr[cnt]  ) + 0.00001 * srollerr;
-			float upitch = 0.01 * pitcherr + 0.2   * ( pitcherr - ppitcherr[cnt] ) + 0.00001 * spitcherr;
-			float uyaw   = 0.02 * yawerr   + 0.005 * ( yawerr   - pyawerr[cnt]   );
-
-			prollerr[cnt]  = rollerr;
-			ppitcherr[cnt] = pitcherr;
-			pyawerr[cnt]   = yawerr;
-			cnt++;
-			if ( cnt > 4 ) cnt = 0;
-
-			else {
-				R = - uroll  + uyaw; 
-				L =   uroll  + uyaw;
-				F =   upitch - uyaw;
-				B = - upitch - uyaw;
-			}
+			R =   roll  * 0.0222 + 1.00; 
+			L = - roll  * 0.0222 + 1.12;
+			F = - pitch * 0.0222 + 1.12;
+			B =   pitch * 0.0222 + 1.00;
 
 			//Limitter
 			if ( R > 2.0 ) R = 2.0;
@@ -376,10 +344,9 @@ int main()
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
 			pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
+			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
 					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
-					,roll ,pitch ,yaw ,rroll ,rpitch ,ryaw
 					,R ,L ,F ,B
 			       );
 			fs << outstr << endl;
