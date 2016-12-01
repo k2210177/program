@@ -43,7 +43,7 @@ int main()
 
 	int breakflag=0;
 	float M = 1.0;
-	short m = 1;
+	short m = 0;
 	short cnt = 0;
 
 	PWM pwm;
@@ -273,7 +273,7 @@ int main()
 				m = 3;
 				printf("set motor 'REAR'\n");
 			}
-			if (joy_button[4]==1){
+			if (joy_button[7]==1){
 				m = 1;
 				printf("set motor 'LEFT'\n");
 			}
