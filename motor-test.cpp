@@ -261,6 +261,8 @@ int main()
 					break;
 			}
 
+			M = 1.0;
+
 			if (joy_button[4]==1){
 				m = 2;
 				printf("set motor 'FRONT'\n");
