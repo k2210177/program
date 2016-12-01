@@ -21,7 +21,6 @@ using namespace std;
 #include <stdint.h>
 #include <sys/time.h>
 
-#define MOTOR 0
 #define SERVO_MIN 1.0 /*mS*/
 #define SERVO_MAX 2.0 /*mS*/
 #define G_SI 9.80665
@@ -44,6 +43,7 @@ int main()
 
 	int breakflag=0;
 	float M = 1.0;
+	short m = 1;
 	short cnt = 0;
 
 	PWM pwm;
@@ -76,12 +76,16 @@ int main()
 
 	fcntl(joy_fd, F_SETFL, O_NONBLOCK); // using non-blocking mode
 
-	if (!pwm.init(0)) {
-		fprintf(stderr, "Output Enable not set. Are you root?\n");
-		return 0;
+	for ( int i = 0 ; i < 4 ; i++ ) {
+
+		if ( !pwm.init(i) ) {
+			fprintf(stderr, "Output Enable not set. Are you root?\n");
+			return 0;
+		}
+		pwm.enable(i);
+		pwm.set_period(i, 500);
+
 	}
-	pwm.enable(0);
-	pwm.set_period(0, 500);
 
 	printf("\nStart thrust test !\n");
 
@@ -93,6 +97,8 @@ int main()
 	now_time=1000000 * tval.tv_sec + tval.tv_usec;
 	past_time = now_time;
 	interval = now_time - past_time;
+
+	printf("set motor 'RIGHT'\n");
 
 //==========================  Main Loop ==============================
 	while(true) {
@@ -215,7 +221,7 @@ int main()
 			if ( M > 2.0 ) M = 2.0;
 			if ( M < 1.0 ) M = 1.0;
 
-			pwm.set_duty_cycle(MOTOR, M);
+			pwm.set_duty_cycle(m, M);
 
 			if (joy_button[3]==1){
 				break;
@@ -254,8 +260,23 @@ int main()
 					//printf("%5d\n %5d\n",(int)js.number,js.value);
 					break;
 			}
-			
 
+			if (joy_button[4]==1){
+				m = 2;
+				printf("set motor 'FRONT'\n");
+			}
+			if (joy_button[5]==1){
+				m = 0;
+				printf("set motor 'RIGHT'\n");
+			}
+			if (joy_button[6]==1){
+				m = 3;
+				printf("set motor 'REAR'\n");
+			}
+			if (joy_button[4]==1){
+				m = 1;
+				printf("set motor 'LEFT'\n");
+			}
 			if (joy_button[3]==1){
 				break;
 			}
