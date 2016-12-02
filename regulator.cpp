@@ -273,10 +273,15 @@ int main ( void ) {
 
 	//main loop
 
-	short PauseFlag = 0 , EndFlag = 0;
-	float R , L , F , B;
+	short PauseFlag = 1 , EndFlag = 0;
+	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
 
-	while ( 1 ) {
+	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
+	pwm.set_duty_cycle ( LEFT_MOTOR  , L );
+	pwm.set_duty_cycle ( FRONT_MOTOR , F );
+	pwm.set_duty_cycle ( REAR_MOTOR  , B );
+
+	while ( EndFlag == 0 ) {
 
 		led.setColor ( Colors :: Red );
 
@@ -315,10 +320,10 @@ int main ( void ) {
 			F =   0.007 * ax * 0.001 - 0.749 * ay * 0.001 + 1.687 * az * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * ax * 0.001 + 0.824 * ay * 0.001 + 1.506 * az * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = 0.5 * R;
-			L = 0.5 * L;
-			F = 0.5 * F;
-			B = 0.5 * B;
+			R = 0.002 * R + 0.128;
+			L = 0.002 * L + 0.013;
+			F = 0.002 * F + 0.013;
+			B = 0.004 * B + 0.128;
 
 			//limitter
 			if ( R > 2.0 ) R = 2.0;
@@ -350,6 +355,16 @@ int main ( void ) {
 
 		}
 
+		R = 1.0;
+		L = 1.0;
+		F = 1.0;
+		B = 1.0;
+
+		pwm.set_duty_cycle ( RIGHT_MOTOR , R );
+		pwm.set_duty_cycle ( LEFT_MOTOR  , L );
+		pwm.set_duty_cycle ( FRONT_MOTOR , F );
+		pwm.set_duty_cycle ( REAR_MOTOR  , B );
+
 		led.setColor ( Colors :: Blue );
 
 		while ( PauseFlag == 1 ) {
@@ -370,6 +385,7 @@ int main ( void ) {
 							printf ( "RESTART\n" );
 						}
 						if ( joy_button[0] == 1 ) {
+							PauseFlag = 0;
 							EndFlag = 1;
 							printf ( "END\n" );
 						}
@@ -378,10 +394,6 @@ int main ( void ) {
 
 			}
 	
-		}
-
-		if ( EndFlag = 1 ) {
-			break;
 		}
 
 	}
