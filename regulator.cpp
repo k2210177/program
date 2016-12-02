@@ -1,4 +1,3 @@
-
 /*
    Itolab drone motor control sample
 
@@ -196,9 +195,9 @@ int main()
 {
 
 	char sensor_name[] = "mpu";
-	float R , L , F , B;
-	int cnt = 0;
 	int breakflag = 0;
+	short m = 0.721;
+	float R , L , F , B;
 
 	//-------- IMU setting -------------------
 
@@ -310,6 +309,26 @@ int main()
 					break;
 			}
 
+
+			float stickRx =  joy_axis[2] / 23170.0 * 0.85;
+			float stickRy = -joy_axis[3] / 23170.0 * 0.85;
+			float stickLx =  joy_axis[0] / 23170.0 * 0.85;
+			float stickLy =  joy_axis[1] / 23170.0 * 0.85;
+
+			if ( stickRx >  1.0 ) stickRx =  1.0;
+			if ( stickRx < -1.0 ) stickRx = -1.0;
+			if ( stickRy >  1.0 ) stickRy =  1.0;
+			if ( stickRy < -1.0 ) stickRy = -1.0;
+			if ( stickLx >  1.0 ) stickLx =  1.0;
+			if ( stickLx < -1.0 ) stickLx = -1.0;
+			if ( stickLy >  1.0 ) stickLy =  1.0;
+			if ( stickLy < -1.0 ) stickLy = -1.0;
+
+			float uthrottle = stickRy + 1.0;
+			float rpitch    = stickLy;
+			float rroll     = stickLx;
+			float ryaw      = stickRx;
+
 			/*
 			   Itolab Drone Configuration
 
@@ -324,10 +343,10 @@ int main()
 
 			//------------- Stabilize Control -----------------
 
-			R =   roll  * 0.0222 + 1.00; 
-			L = - roll  * 0.0222 + 1.00;
-			F = - pitch * 0.0222 + 1.00;
-			B =   pitch * 0.0222 + 1.00;
+			R =   0.858 * ax * 0.001 + 0.011 * ay * 0.001 - 1.919 * az * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
+			L = - 0.696 * ax * 0.001 + 0.013 * ay * 0.001 - 2.414 * az * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
+			F =   0.007 * ax * 0.001 - 0.749 * ay * 0.001 + 1.687 * az * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
+			B =   0.006 * ax * 0.001 + 0.824 * ay * 0.001 + 1.506 * az * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
 			//Limitter
 			if ( R > 2.0 ) R = 2.0;
@@ -344,10 +363,11 @@ int main()
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
 			pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
+			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
-					,roll ,pitch ,yaw
 					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
+					,roll ,pitch ,yaw ,rroll ,rpitch ,ryaw
+					,stickRx ,stickRy ,stickLx ,stickLy
 					,R ,L ,F ,B
 			       );
 			fs << outstr << endl;
