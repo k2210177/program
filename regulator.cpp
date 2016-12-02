@@ -213,6 +213,8 @@ int main ( void ) {
 
 	//IMU setting
 
+	char sensor_name[] = "mpu";
+
 	imu = create_inertial_sensor( sensor_name );
 
 	if ( !imu ) {
