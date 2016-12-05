@@ -1,17 +1,5 @@
-
-/*
-   Itolab drone motor control sample
-
-   build
-   make
-   Usage
-   sudo sixad -start &
-   sudo ./dronemotor
-   Copyright K.ITO,2016
-
- */
-
-
+// 12月5日（月）改訂
+// メインプログラム
 
 #include <iostream>
 #include <iomanip>
@@ -19,37 +7,33 @@
 #include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
-#include <linux/joystick.h>
 #include <fstream>
-
-#define JOY_DEV "/dev/input/js0"
-
-using namespace std;
-
-#include <unistd.h>
-#include "Navio/PWM.h"
-#include "Navio/RGBled.h"
-#include "Navio/Util.h"
 #include <stdio.h>
+#include <stdint.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#include <linux/joystick.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdint.h>
-#include <sys/time.h>
-#include "Navio/MPU9250.h"
-#include "Navio/LSM9DS1.h"
+#include "../Navio2/C++/Navio/MPU9250.h"
+#include "../Navio2/C++/Navio/LSM9DS1.h"
+#include "../Navio2/C++/Navio/PWM.h"
+#include "../Navio2/C++/Navio/RGBled.h"
+#include "../Navio2/C++/Navio/Util.h"
 #include "AHRS.hpp"
 
 #define RIGHT_MOTOR 0
 #define LEFT_MOTOR 1
 #define FRONT_MOTOR 2
 #define REAR_MOTOR 3
-
-#define SERVO_MIN 1.0 /*mS*/
-#define SERVO_MAX 2.0 /*mS*/
+#define SERVO_MIN 1.0 /*ms*/
+#define SERVO_MAX 2.0 /*ms*/
 #define G_SI 9.80665
 #define PI   3.14159
+#define JOY_DEV "/dev/input/js0"
+
+using namespace std;
 
 // Objects
 
@@ -76,30 +60,29 @@ unsigned long previoustime, currenttime;
 float dtsumm = 0;
 int isFirst = 1;
 
-//============================= Initial setup =================================
+void imuSetup ( void ) {
 
-void imuSetup()
-{
-	//----------------------- MPU initialization ------------------------------
+	//MPU initialization
 
 	imu->initialize();
 
-	//-------------------------------------------------------------------------
+	printf( "Beginning Gyro calibration...\n" );
 
-	printf("Beginning Gyro calibration...\n");
-	for(int i = 0; i < 100; i++)
-	{
+	for( int i = 0 ; i < 100; i++ ) {
+
 		imu->update();
-		imu->read_gyroscope(&gx, &gy, &gz);
+		imu->read_gyroscope( &gx , &gy , &gz);
 
 		gx *= 180 / PI;
 		gy *= 180 / PI;
 		gz *= 180 / PI;
 
-		offset[0] += ( -gx * 0.0175);
-		offset[1] += ( -gy * 0.0175);
-		offset[2] += ( -gz * 0.0175);
+		offset[0] += ( -gx * 0.0175 );
+		offset[1] += ( -gy * 0.0175 );
+		offset[2] += ( -gz * 0.0175 );
+
 		usleep(10000);
+
 	}
 
 	offset[0] /= 100.0;
@@ -110,12 +93,9 @@ void imuSetup()
 	ahrs.setGyroOffset( offset[0] , offset[1] , offset[2] );
 }
 
+void imuLoop ( void ) {
 
-
-void imuLoop()
-
-{
-	//----------------------- Calculate delta time ----------------------------
+	//Calculate delta time
 
 	gettimeofday( &tv , NULL );
 	previoustime = currenttime;
@@ -126,123 +106,94 @@ void imuLoop()
 	currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
 	dt = ( currenttime - previoustime ) / 1000000.0;
 
-	//-------- Read raw measurements from the MPU and update AHRS --------------
-
+	//Read raw measurements from the MPU and update AHRS
 	// Accel + gyro + mag.
 	// Soft and hard iron calibration required for proper function.
 
-	   imu->update();
-	   imu->read_accelerometer( &ax , &ay , &az );
-	   imu->read_gyroscope( &gx , &gy , &gz );
-	   imu->read_magnetometer( &mx , &my , &mz );
+	imu -> update();
+	imu -> read_accelerometer( &ax , &ay , &az );
+	imu -> read_gyroscope( &gx , &gy , &gz );
+	imu -> read_magnetometer( &mx , &my , &mz );
 
-	   ax /= G_SI;
-	   ay /= G_SI;
-	   az /= G_SI;
-	   gx *= 180 / PI;
-	   gy *= 180 / PI;
-	   gz *= 180 / PI;
+	ax /= G_SI;
+	ay /= G_SI;
+	az /= G_SI;
+	gx *= 180 / PI;
+	gy *= 180 / PI;
+	gz *= 180 / PI;
 
-	   ahrs.update( ax , ay , az , gx * 0.0175 , gy * 0.0175 , gz * 0.0175 , my , mx , -mz , dt );
+	ahrs.update( ax , ay , az , gx * 0.0175 , gy * 0.0175 , gz * 0.0175 , my , mx , -mz , dt );
 
-	//------------------------ Read Euler angles ------------------------------
+	//Read Euler angles
 
 	ahrs.getEuler( &pitch , &roll , &yaw );
 
-	//------------------- Discard the time of the first cycle -----------------
+	//Discard the time of the first cycle
 
-	if ( !isFirst )
-	{
+	if ( !isFirst )	{
+
 		if ( dt > maxdt ) maxdt = dt;
 		if ( dt < mindt ) mindt = dt;
+
 	}
 	isFirst = 0;
 
-	//------------- Console and network output with a lowered rate ------------
+	//Console and network output with a lowered rate
 
-#if 1
 	dtsumm += dt;
-	if( dtsumm > 0.05 )
-	{
-		// Console output
+
+	if( dtsumm > 0.05 ) {
+
+		//Console output
 		//printf("ROLL: %+05.2f PITCH: %+05.2f YAW: %+05.2f PERIOD %.4fs RATE %dHz \n", roll, pitch, gz/*yaw * -1*/, dt, int(1/dt));
 
 		// Network output
-		//sprintf(sendline,"%10f %10f %10f %10f %dHz\n", ahrs.getW(), ahrs.getX(), ahrs.getY(), ahrs.getZ(), int(1/dt));
-		//sendto(sockfd, sendline, strlen(sendline), 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
+		//sprintf( sendline , "%10f %10f %10f %10f %dHz\n" ,ahrs.getW() ,ahrs.getX() ,ahrs.getY() ,ahrs.getZ() ,int( 1/dt ) );
+		//sendto( sockfd , sendline , strlen( sendline ) , 0 ,  ( struct sockaddr * )&servaddr , sizeof( servaddr ) );
 
 		dtsumm = 0;
+
 	}
-#endif
+
 }
 
-InertialSensor* create_inertial_sensor( char *sensor_name )
+InertialSensor* create_inertial_sensor ( char *sensor_name ) {
 
-{
 	InertialSensor *imu;
 
 	if ( !strcmp( sensor_name , "mpu" ) ) {
+
 		printf( "Selected: MPU9250\n" );
 		imu = new MPU9250();
+
 	}
 	else if ( !strcmp( sensor_name , "lsm" ) ) {
+
 		printf( "Selected: LSM9DS1\n" );
 		imu = new LSM9DS1();
-	}
 
+	}
 	else {
+
 		return NULL;
+
 	}
 
 	return imu;
+
 }
 
-//==================== Start Main function =========================
+int main ( void ) {
 
-int main()
-{
-
-	char sensor_name[] = "mpu";
-	float rollerr , pitcherr , yawerr;
-	float prollerr[5] , ppitcherr[5] , pyawerr[5];
-	int cnt = 0;
-	int breakflag = 0;
-	float srollerr  = 0.0;
-	float spitcherr = 0.0;
-	float uyawerr   = 0.0;
-	float croll , cpitch;
-	float R,L,F,B;
-
-	//-------- IMU setting -------------------
-
-	imu = create_inertial_sensor( sensor_name );
-
-	if ( !imu ) {
-		printf( "Wrong sensor name. Select: mpu or lsm\n" );
-		return EXIT_FAILURE;
-	}
-
-	if ( !imu->probe() ) {
-		printf( "Sensor not enable\n") ;
-		return EXIT_FAILURE;
-	}
-
-	imuSetup();
-
-	PWM pwm;
-	RGBled led;
-	js_event js;
-
-	if( !led.initialize() ) return EXIT_FAILURE;
-
-	//-------- PS3 Controller setting --------
+	//DualShock3 setting
 
 	int joy_fd( -1 ) , num_of_axis( 0 ) , num_of_buttons( 0 );
 	char name_of_joystick[80];
 	vector<char> joy_button;
 	vector<int> joy_axis;
+	js_event js;
 
-	if ( ( joy_fd = open( JOY_DEV, O_RDONLY ) ) < 0 ) {
+	if ( ( joy_fd = open( JOY_DEV ,O_RDONLY ) ) < 0 ) {
 		printf( "Failed to open %s" ,JOY_DEV );
 		cerr << "Failed to open " << JOY_DEV << endl;
 		return -1;
@@ -257,7 +208,30 @@ int main()
 
 	printf( "Joystick: %s axis: %d buttons: %d\n" ,name_of_joystick ,num_of_axis ,num_of_buttons );
 
-	fcntl( joy_fd, F_SETFL, O_NONBLOCK ); // using non-blocking mode
+	fcntl( joy_fd, F_SETFL, O_NONBLOCK );
+
+	//IMU setting
+
+	char sensor_name[] = "mpu";
+
+	imu = create_inertial_sensor( sensor_name );
+
+	if ( !imu ) {
+		printf( "Wrong sensor name. Select: mpu or lsm\n" );
+		return EXIT_FAILURE;
+	}
+
+	if ( !imu -> probe() ) {
+		printf( "Sensor not enable\n") ;
+		return EXIT_FAILURE;
+	}
+
+	imuSetup();
+
+	PWM pwm;
+	RGBled led;
+
+	if( !led.initialize() ) return EXIT_FAILURE;
 
 	if ( check_apm() ) {
 		return 1;
@@ -269,9 +243,7 @@ int main()
 		if( i % 1000 == 0 ) {
 			printf( "#" );
 			fflush( stdout );
-				
 		}
-
 	}
 
 	for ( int i = 0 ; i < 4 ; i++ ) {
@@ -284,12 +256,12 @@ int main()
 	}
 	printf( "\nReady to Fly !\n" );
 
-	////// Log system setting
+	//flightlog setting
 	char filename[] = "flightlog.txt";
 	char outstr[255];
 	std::ofstream fs(filename);
 
-	///// Clock setting
+	//clock setting
 	struct timeval tval;
 	unsigned long now_time,past_time,interval;
 
@@ -298,124 +270,88 @@ int main()
 	past_time = now_time;
 	interval  = now_time - past_time;
 
-	croll  = roll;
-	cpitch = pitch;
+	short PauseFlag = 1 , EndFlag = 0;
+	float StickRx , StickRy , StickLx , StickLy;
+	float throttle;
+	float rroll , rpitch , ryaw;
+	float roll_rad , pitch_rad , yaw_rad;
+	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
 
-//==========================  Main Loop ==============================
+	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
+	pwm.set_duty_cycle ( LEFT_MOTOR  , L );
+	pwm.set_duty_cycle ( FRONT_MOTOR , F );
+	pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-	while ( true ) {
+	//main loop
+
+	while ( EndFlag == 0 ) {
 
 		led.setColor ( Colors :: Red );
 
-		while ( true ) {
+		while ( PauseFlag == 0 ) {
 
 			gettimeofday ( &tval , NULL );
 			past_time = now_time;
 			now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
 			interval  = now_time - past_time;
 
-			imuLoop ();
-
 			read ( joy_fd , &js , sizeof ( js_event ) );
 
 			switch ( js.type & ~JS_EVENT_INIT ) {
+
 				case JS_EVENT_AXIS:
 					joy_axis[( int )js.number] = js.value;
 					break;
+
 				case JS_EVENT_BUTTON:
 					joy_button[( int )js.number] = js.value;
-					//printf("%5d\n %5d\n",( int )js.number,js.value);
+					if( js.value == 1 ) {
+						if ( joy_button[3] == 1 ) {
+							PauseFlag = 1;
+							printf ( "PAUSE\n" );
+						}
+					}
 					break;
+
 			}
 
-
-			float stickRx =  joy_axis[2] / 23170.0;
-			float stickRy = -joy_axis[3] / 23170.0;
-			float stickLx =  joy_axis[0] / 23170.0;
-			float stickLy =  joy_axis[1] / 23170.0;
+			stickRx =  joy_axis[2] / 23170.0;
+			stickRy = -joy_axis[3] / 23170.0;
+			stickLx =  joy_axis[0] / 23170.0;
+			stickLy =  joy_axis[1] / 23170.0;
 
 			if ( stickRx >  1.0 ) stickRx =  1.0;
 			if ( stickRx < -1.0 ) stickRx = -1.0;
 			if ( stickRy >  1.0 ) stickRy =  1.0;
-			if ( stickRy <  0.0 ) stickRy =  0.0;
-
+			if ( stickRy < -1.0 ) stickRy = -1.0;
 			if ( stickLx >  1.0 ) stickLx =  1.0;
 			if ( stickLx < -1.0 ) stickLx = -1.0;
 			if ( stickLy >  1.0 ) stickLy =  1.0;
 			if ( stickLy < -1.0 ) stickLy = -1.0;
 
-			float uthrottle = stickRy * 1.0 + 1.0;
-			float rpitch    = stickLy * 10.0;
-			float rroll     = stickLx * 10.0;
-			float ryaw      = stickRx * 10.0;
+			throttle = stickRy;
+			rpitch   = stickLy;
+			rroll    = stickLx;
+			ryaw     = stickRx;
 
-			/*
-			   Itolab Drone Configuration
+			imuLoop ();
 
-			        F
-			        |
-			        |
-			   L----+----R
-			        |
-			        |
-			        B
-			 */
+			roll_rad  = roll  * PI() / 180;
+			pitch_rad = pitch * PI() / 180;
+			yaw_rad   = yaw   * PI() / 180;
 
-			//------------- Stabilize Control -----------------
+			//regulator
+			R =   0.858 * ax * 0.001 + 0.011 * ay * 0.001 - 1.919 * az * 0.001 + 7.816 * roll_rad + 0.028 * pitch_rad - 5.042 * yaw_rad;
+			L = - 0.696 * ax * 0.001 + 0.013 * ay * 0.001 - 2.414 * az * 0.001 - 6.238 * roll_rad + 0.035 * pitch_rad - 6.295 * yaw_rad;
+			F =   0.007 * ax * 0.001 - 0.749 * ay * 0.001 + 1.687 * az * 0.001 + 0.017 * roll_rad - 6.664 * pitch_rad + 4.385 * yaw_rad;
+			B =   0.006 * ax * 0.001 + 0.824 * ay * 0.001 + 1.506 * az * 0.001 + 0.016 * roll_rad + 7.456 * pitch_rad + 3.967 * yaw_rad;
 
-			rollerr  = rroll  - ( roll  - croll  );
-			pitcherr = rpitch - ( pitch - cpitch );
-			yawerr   = ryaw   + gz;
+			R = 0.002 * R + 0.128;
+			L = 0.002 * L + 0.013;
+			F = 0.002 * F + 0.013;
+			B = 0.004 * B + 0.128;
 
-			srollerr  = prollerr[0]  + prollerr[1]  + prollerr[2]  + prollerr[3]  + prollerr[4];
-			spitcherr = ppitcherr[0] + ppitcherr[1] + ppitcherr[2] + ppitcherr[3] + ppitcherr[4];
-			//syawerr   = 0.0;
-
-			if ( uthrottle < 1.05 ) {
-				srollerr  = 0.0;
-				spitcherr = 0.0;
-			}
-
-			if ( srollerr  >  20000.0 ) spitcherr =  20000.0;
-			if ( srollerr  < -20000.0 ) spitcherr = -20000.0;
-			if ( spitcherr >  20000.0 ) spitcherr =  20000.0;
-			if ( spitcherr < -20000.0 ) spitcherr = -20000.0;
-			//if ( syawerr   > 1.0 )      syawerr   =  1.0;
-			//if ( syawerr   < 0.0 )      syawerr   =  0.0;
-
-			float uroll  = 0.005 * rollerr  + 0.2  * ( rollerr  - prollerr[cnt]  ) + 0.000001 * srollerr;
-			float upitch = 0.01  * pitcherr + 0.4  * ( pitcherr - ppitcherr[cnt] ) + 0.000001 * spitcherr;
-			float uyaw   = 0.02  * yawerr   + 0.01 * ( yawerr   - pyawerr[cnt]   );
-
-			if ( stickLx <= 0.05 && stickLx >= -0.05 ) uroll  = uroll  + 0.05 * roll  / 90.0;
-			if ( stickLy <= 0.05 && stickLy >= -0.05 ) upitch = upitch + 0.05 * pitch / 90.0;
-
-			prollerr[cnt]  = rollerr;
-			ppitcherr[cnt] = pitcherr;
-			pyawerr[cnt]   = yawerr;
-			cnt++;
-			if ( cnt > 4 ) cnt = 0;
-
-			if ( uthrottle < 1.05 ) {
-				uroll  = 0.0;
-				upitch = 0.0;
-				uyaw   = 0.0;
-			}
-
-			float R = uthrottle - uroll  + uyaw;
-			float L = uthrottle + uroll  + uyaw;
-			float F = uthrottle + upitch - uyaw;
-			float B = uthrottle - upitch - uyaw;
-
-			if ( uthrottle > 1.05 ) {
-				R = uthrottle - uroll  + uyaw;
-				L = uthrottle + uroll  + uyaw + 0.12;
-				F = uthrottle + upitch - uyaw + 0.12;
-				B = uthrottle - upitch - uyaw;
-			}
-
-			//Limitter
-
+			//limitter
 			if ( R > 2.0 ) R = 2.0;
 			if ( R < 1.0 ) R = 1.0;
 			if ( L > 2.0 ) L = 2.0;
@@ -428,20 +364,15 @@ int main()
 			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
 			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
-
 			pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
-					,now_time ,interval ,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
-					,roll ,pitch ,yaw ,rroll ,rpitch ,ryaw
-					,stickRx ,stickRy ,stickLx ,stickLy ,R ,L ,F ,B
+			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n"
+					,now_time ,interval
+					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
+					,roll ,pitch ,yaw
+					,R ,L ,F ,B
 			       );
-
 			fs << outstr << endl;
-
-			if ( joy_button[3] == 1 ) {
-				break;
-			}
 
 			do{
 				gettimeofday ( &tval , NULL );
@@ -450,75 +381,53 @@ int main()
 
 		}
 
+		R = 1.0;
+		L = 1.0;
+		F = 1.0;
+		B = 1.0;
+
+		pwm.set_duty_cycle ( RIGHT_MOTOR , R );
+		pwm.set_duty_cycle ( LEFT_MOTOR  , L );
+		pwm.set_duty_cycle ( FRONT_MOTOR , F );
+		pwm.set_duty_cycle ( REAR_MOTOR  , B );
+
 		led.setColor ( Colors :: Blue );
 
-		while ( joy_button[3] == 1 ){
-
-			read ( joy_fd , &js , sizeof ( js_event ) );
-			switch ( js.type & ~JS_EVENT_INIT ) {
-				case JS_EVENT_AXIS:
-					joy_axis[( int )js.number] = js.value;
-					break;
-				case JS_EVENT_BUTTON:
-					joy_button[( int )js.number] = js.value;
-					//printf( "%5d\n %5d\n" ,( int )js.number ,js.value );
-					break;
-			}
-
-		}
-
-		while ( true ){
+		while ( PauseFlag == 1 ) {
 
 			read ( joy_fd , &js , sizeof ( js_event ) );
 
-			switch ( js.type & ~JS_EVENT_INIT) {
-				case JS_EVENT_AXIS:
-					joy_axis[( int )js.number] = js.value;
-					break;
-				case JS_EVENT_BUTTON:
-					joy_button[( int )js.number] = js.value;
-					//printf( "%5d\n %5d\n" ,( int )js.number ,js.value );
-					break;
-			}
-
-			if ( joy_button[3] == 1 ) {
-				break;
-			}
-			if ( joy_button[0] == 1 ) {
-				breakflag = 1;
-				break;
-			}
-			else breakflag = 0;
-		}
-
-		if ( breakflag == 1 ) break;
-		else breakflag = 0;
-
-		while ( joy_button[3] == 1 ) {
-
-			read (joy_fd , &js , sizeof ( js_event ) );
-
 			switch ( js.type & ~JS_EVENT_INIT ) {
+
 				case JS_EVENT_AXIS:
 					joy_axis[( int )js.number] = js.value;
 					break;
+
 				case JS_EVENT_BUTTON:
 					joy_button[( int )js.number] = js.value;
+					if( js.value == 1 ) {
+						if ( joy_button[3] == 1 ) {
+							PauseFlag = 0;
+							printf ( "RESTART\n" );
+						}
+						if ( joy_button[0] == 1 ) {
+							PauseFlag = 0;
+							EndFlag = 1;
+							printf ( "END\n" );
+						}
+					}
 					break;
+
 			}
+	
 		}
 
 	}
 
-
 	fs.close();
-
-
 
 	led.setColor ( Colors :: Green );
 
-
-
 	return 0;
 
-
+}
