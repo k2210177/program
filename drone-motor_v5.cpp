@@ -315,30 +315,30 @@ int main ( void ) {
 
 			}
 
-			stickRx =  joy_axis[2] / 23170.0;
-			stickRy = -joy_axis[3] / 23170.0;
-			stickLx =  joy_axis[0] / 23170.0;
-			stickLy =  joy_axis[1] / 23170.0;
+			StickRx =  joy_axis[2] / 23170.0;
+			StickRy = -joy_axis[3] / 23170.0;
+			StickLx =  joy_axis[0] / 23170.0;
+			StickLy =  joy_axis[1] / 23170.0;
 
-			if ( stickRx >  1.0 ) stickRx =  1.0;
-			if ( stickRx < -1.0 ) stickRx = -1.0;
-			if ( stickRy >  1.0 ) stickRy =  1.0;
-			if ( stickRy < -1.0 ) stickRy = -1.0;
-			if ( stickLx >  1.0 ) stickLx =  1.0;
-			if ( stickLx < -1.0 ) stickLx = -1.0;
-			if ( stickLy >  1.0 ) stickLy =  1.0;
-			if ( stickLy < -1.0 ) stickLy = -1.0;
+			if ( StickRx >  1.0 ) StickRx =  1.0;
+			if ( StickRx < -1.0 ) StickRx = -1.0;
+			if ( StickRy >  1.0 ) StickRy =  1.0;
+			if ( StickRy < -1.0 ) StickRy = -1.0;
+			if ( StickLx >  1.0 ) StickLx =  1.0;
+			if ( StickLx < -1.0 ) StickLx = -1.0;
+			if ( StickLy >  1.0 ) StickLy =  1.0;
+			if ( StickLy < -1.0 ) StickLy = -1.0;
 
-			throttle = stickRy;
-			rpitch   = stickLy;
-			rroll    = stickLx;
-			ryaw     = stickRx;
+			throttle = StickRy;
+			rpitch   = StickLy;
+			rroll    = StickLx;
+			ryaw     = StickRx;
 
 			imuLoop ();
 
-			roll_rad  = roll  * PI() / 180;
-			pitch_rad = pitch * PI() / 180;
-			yaw_rad   = yaw   * PI() / 180;
+			roll_rad  = roll  * PI / 180;
+			pitch_rad = pitch * PI / 180;
+			yaw_rad   = yaw   * PI / 180;
 
 			//regulator
 			R =   0.858 * ax * 0.001 + 0.011 * ay * 0.001 - 1.919 * az * 0.001 + 7.816 * roll_rad + 0.028 * pitch_rad - 5.042 * yaw_rad;
@@ -346,10 +346,10 @@ int main ( void ) {
 			F =   0.007 * ax * 0.001 - 0.749 * ay * 0.001 + 1.687 * az * 0.001 + 0.017 * roll_rad - 6.664 * pitch_rad + 4.385 * yaw_rad;
 			B =   0.006 * ax * 0.001 + 0.824 * ay * 0.001 + 1.506 * az * 0.001 + 0.016 * roll_rad + 7.456 * pitch_rad + 3.967 * yaw_rad;
 
-			R = 0.002 * R + 0.128;
-			L = 0.002 * L + 0.013;
-			F = 0.002 * F + 0.013;
-			B = 0.004 * B + 0.128;
+			R = R + 0.128 + throttle - rroll  + yaw;
+			L = L + 0.013 + throttle + rroll  + yaw;
+			F = F + 0.013 + throttle + rpitch - yaw;
+			B = B + 0.128 + throttle - rpitch - yaw;
 
 			//limitter
 			if ( R > 2.0 ) R = 2.0;
@@ -393,6 +393,8 @@ int main ( void ) {
 
 		led.setColor ( Colors :: Blue );
 
+		usleep ( 1000 );
+
 		while ( PauseFlag == 1 ) {
 
 			read ( joy_fd , &js , sizeof ( js_event ) );
@@ -421,6 +423,8 @@ int main ( void ) {
 			}
 	
 		}
+
+		usleep ( 1000 );
 
 	}
 
