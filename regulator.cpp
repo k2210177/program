@@ -274,6 +274,7 @@ int main ( void ) {
 	//main loop
 
 	short PauseFlag = 1 , EndFlag = 0;
+	float roll_rad , pitch_rad , yaw_rad;
 	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
@@ -314,16 +315,20 @@ int main ( void ) {
 
 			imuLoop ();
 
+			roll  = roll  * PI / 180;
+			pitch = pitch * PI / 180;
+			yaw   = yaw   * PI / 180;
+
 			//regulator
 			R =   0.858 * ax * 0.001 + 0.011 * ay * 0.001 - 1.919 * az * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
 			L = - 0.696 * ax * 0.001 + 0.013 * ay * 0.001 - 2.414 * az * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
 			F =   0.007 * ax * 0.001 - 0.749 * ay * 0.001 + 1.687 * az * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * ax * 0.001 + 0.824 * ay * 0.001 + 1.506 * az * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = 0.002 * R + 0.128;
-			L = 0.002 * L + 0.013;
-			F = 0.002 * F + 0.013;
-			B = 0.004 * B + 0.128;
+			R = 1.000 * R + 0.128;
+			L = 1.000 * L + 0.013;
+			F = 1.000 * F + 0.013;
+			B = 1.000 * B + 0.128;
 
 			//limitter
 			if ( R > 2.0 ) R = 2.0;
@@ -340,7 +345,7 @@ int main ( void ) {
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
 			pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n"
+			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
 					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
 					,roll ,pitch ,yaw
