@@ -74,13 +74,9 @@ void imuSetup ( void ) {
 		imu->update();
 		imu->read_gyroscope( &gx , &gy , &gz);
 
-		gx *= 180 / PI;
-		gy *= 180 / PI;
-		gz *= 180 / PI;
-
-		offset[0] += ( -gx * 0.0175 );
-		offset[1] += ( -gy * 0.0175 );
-		offset[2] += ( -gz * 0.0175 );
+		offset[0] += ( -gx );
+		offset[1] += ( -gy );
+		offset[2] += ( -gz );
 
 		usleep(10000);
 
