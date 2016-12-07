@@ -116,11 +116,11 @@ void imuLoop ( void ) {
 	ay /= G_SI;
 	az /= G_SI;
 
-	ahrs.update( ay , ax , -az , gy , gx , -gz , mx , my , mz , dt );
+	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
 	//Read Euler angles
 
-	ahrs.getEuler( &roll , &pitch , &yaw );
+	ahrs.getEuler( &pitch , &roll , &yaw );
 
 	//Discard the time of the first cycle
 
@@ -312,10 +312,10 @@ int main ( void ) {
 			imuLoop ();
 
 			//regulator
-			R =   0.858 * gx * 0.001 + 0.011 * gy * 0.001 - 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
-			L = - 0.696 * gx * 0.001 + 0.013 * gy * 0.001 - 2.414 * gz * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
-			F =   0.007 * gx * 0.001 - 0.749 * gy * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
-			B =   0.006 * gx * 0.001 + 0.824 * gy * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
+			R =   0.858 * gy * 0.001 + 0.011 * gx * 0.001 + 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
+			L = - 0.696 * gy * 0.001 + 0.013 * gx * 0.001 + 2.414 * gz * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
+			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 - 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
+			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 - 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
 			R = 1.000 * R + 0.000;
 			L = 1.000 * L + 0.000;
