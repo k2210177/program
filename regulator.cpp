@@ -123,7 +123,7 @@ void imuLoop ( void ) {
 	gy *= 180 / PI;
 	gz *= 180 / PI;
 
-	ahrs.update( ax , ay , az , gx * 0.0175 , gy * 0.0175 , gz * 0.0175 , my , mx , -mz , dt );
+	ahrs.update( ax , ay , az , gx * 0.0175 , gy * 0.0175 , gz * 0.0175 , mx , my , -mz , dt );
 
 	//Read Euler angles
 
