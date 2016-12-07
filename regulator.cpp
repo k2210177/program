@@ -266,8 +266,7 @@ int main ( void ) {
 
 	//main loop
 
-	short PauseFlag = 1 , EndFlag = 0;
-	float roll_rad , pitch_rad , yaw_rad;
+	short PauseFlag = 1 , EndFlag = 0 , c = 0;
 	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
@@ -296,8 +295,12 @@ int main ( void ) {
 
 				case JS_EVENT_BUTTON:
 					joy_button[( int )js.number] = js.value;
-					if( js.value == 1 ) {
+					if ( js.value == 0 ) {
+						c = 1;
+					}
+					if ( js.value == 1 && c = 1 ) {
 						if ( joy_button[3] == 1 ) {
+							c = 0;
 							PauseFlag = 1;
 							printf ( "PAUSE\n" );
 						}
@@ -314,10 +317,10 @@ int main ( void ) {
 			F =   0.007 * gx * 0.001 - 0.749 * gy * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * gx * 0.001 + 0.824 * gy * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = 1.000 * R + 0.128;
-			L = 1.000 * L + 0.013;
-			F = 1.000 * F + 0.013;
-			B = 1.000 * B + 0.128;
+			R = 1.000 * R + 0.000;
+			L = 1.000 * L + 0.000;
+			F = 1.000 * F + 0.000;
+			B = 1.000 * B + 0.000;
 
 			//limitter
 			if ( R > 2.0 ) R = 2.0;
@@ -373,8 +376,12 @@ int main ( void ) {
 
 				case JS_EVENT_BUTTON:
 					joy_button[( int )js.number] = js.value;
-					if( js.value == 1 ) {
+					if ( js.value == 0 ) {
+						c = 1;
+					}
+					if ( js.value == 1 ) {
 						if ( joy_button[3] == 1 ) {
+							c = 0;
 							PauseFlag = 0;
 							printf ( "RESTART\n" );
 						}
