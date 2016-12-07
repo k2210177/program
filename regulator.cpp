@@ -116,11 +116,11 @@ void imuLoop ( void ) {
 	ay /= G_SI;
 	az /= G_SI;
 
-	ahrs.update( ay , ax , -az , gy , gx , -gz , mx , my , mz , dt );
+	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
 	//Read Euler angles
 
-	ahrs.getEuler( &pitch , &roll , &yaw );
+	ahrs.getEuler( &roll , &pitch , &yaw );
 
 	//Discard the time of the first cycle
 
@@ -298,7 +298,7 @@ int main ( void ) {
 					if ( js.value == 0 ) {
 						c = 1;
 					}
-					if ( js.value == 1 && c = 1 ) {
+					if ( js.value == 1 && c == 1 ) {
 						if ( joy_button[3] == 1 ) {
 							c = 0;
 							PauseFlag = 1;
