@@ -1,5 +1,5 @@
 // 12月7日 改訂
-// 最適レギュレータテストプログラム
+// 最適レギュレータプログラム
 
 #include <iostream>
 #include <iomanip>
