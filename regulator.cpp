@@ -119,11 +119,8 @@ void imuLoop ( void ) {
 	ax /= G_SI;
 	ay /= G_SI;
 	az /= G_SI;
-	gx *= 180 / PI;
-	gy *= 180 / PI;
-	gz *= 180 / PI;
 
-	ahrs.update( ax , ay , az , gx * 0.0175 , gy * 0.0175 , gz * 0.0175 , mx , my , -mz , dt );
+	ahrs.update( ay , ax , -az , gy , gx , -gz , mx , my , mz , dt );
 
 	//Read Euler angles
 
@@ -314,14 +311,6 @@ int main ( void ) {
 			}
 
 			imuLoop ();
-
-			roll  = roll  * PI / 180;
-			pitch = pitch * PI / 180;
-			yaw   = yaw   * PI / 180;
-
-			gx = gx * PI / 180;
-			gy = gy * PI / 180;
-			gz = gz * PI / 180;
 
 			//regulator
 			R =   0.858 * gx * 0.001 + 0.011 * gy * 0.001 - 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
