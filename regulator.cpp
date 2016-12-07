@@ -116,7 +116,7 @@ void imuLoop ( void ) {
 	ay /= G_SI;
 	az /= G_SI;
 
-	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
+	ahrs.update( ay , ax , -az , gy , gx , -gz , mx , my , mz , dt );
 
 	//Read Euler angles
 
