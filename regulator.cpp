@@ -319,6 +319,10 @@ int main ( void ) {
 			pitch = pitch * PI / 180;
 			yaw   = yaw   * PI / 180;
 
+			gx = gx * PI / 180;
+			gy = gy * PI / 180;
+			gz = gz * PI / 180;
+
 			//regulator
 			R =   0.858 * gx * 0.001 + 0.011 * gy * 0.001 - 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
 			L = - 0.696 * gx * 0.001 + 0.013 * gy * 0.001 - 2.414 * gz * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
