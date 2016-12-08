@@ -116,6 +116,10 @@ void imuLoop ( void ) {
 	ay /= G_SI;
 	az /= G_SI;
 
+	mx = mx * PI / 180;
+	my = my * PI / 180;
+	mz = mz * PI / 180;
+
 	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
 	//Read Euler angles
@@ -268,7 +272,7 @@ int main ( void ) {
 
 	short c = 0 , PauseFlag = 1 , EndFlag = 0;
 	float SRx , SRy , SLx , SLy;
-	float throttle , rroll , rpitch , ryaw;
+	float throttle , rroll , rpitch , ryaw , cyaw;
 	float ad , gd;
 	float R , L , F , B;
 	float min = 1.0 , max = 2.0;
@@ -281,6 +285,10 @@ int main ( void ) {
 	while ( EndFlag == 0 ) {
 
 		led.setColor ( Colors :: Red );
+
+		imuLoop();
+
+		cyaw = yaw;
 
 		while ( PauseFlag == 0 ) {
 
