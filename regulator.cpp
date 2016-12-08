@@ -1,5 +1,5 @@
-// 12月7日 改訂
-// 最適レギュレータプログラム
+// 12月8日 作成
+// メインプログラム
 
 #include <iostream>
 #include <iomanip>
@@ -267,7 +267,7 @@ int main ( void ) {
 	//main loop
 
 	short c = 0 , PauseFlag = 1 , EndFlag = 0;
-	float gd;
+	float ad , gd;
 	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
@@ -316,10 +316,14 @@ int main ( void ) {
 			pitch =   pitch * PI / 180.0;
 			yaw   = - yaw   * PI / 180.0;
 
-			gd = gx;
-			gx = gy;
-			gy = gd;
+			ad =   ax;
+			ax =   ay;
+			ay =   ad;
+			az = - az;
 
+			gd =   gx;
+			gx =   gy;
+			gy =   gd;
 			gz = - gz;
 
 			//regulator
