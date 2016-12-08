@@ -270,12 +270,13 @@ int main ( void ) {
 	float SRx , SRy , SLx , SLy;
 	float throttle , rroll , rpitch , ryaw;
 	float ad , gd;
-	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
+	float R , L , F , B;
+	float min = 1.0 , max = 2.0;
 
-	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
-	pwm.set_duty_cycle ( LEFT_MOTOR  , L );
-	pwm.set_duty_cycle ( FRONT_MOTOR , F );
-	pwm.set_duty_cycle ( REAR_MOTOR  , B );
+	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
+	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
+	pwm.set_duty_cycle ( FRONT_MOTOR , min );
+	pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
 	while ( EndFlag == 0 ) {
 
@@ -320,7 +321,7 @@ int main ( void ) {
 			if ( SRx >  1.0 ) SRx =  1.0;
 			if ( SRx < -1.0 ) SRx = -1.0;
 			if ( SRy >  1.0 ) SRy =  1.0;
-			if ( SRy < -1.0 ) SRy = -1.0;
+			if ( SRy <  0.0 ) SRy =  0.0;
 			if ( SLx >  1.0 ) SLx =  1.0;
 			if ( SLx < -1.0 ) SLx = -1.0;
 			if ( SLy >  1.0 ) SLy =  1.0;
@@ -353,20 +354,20 @@ int main ( void ) {
 			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = 0.500 * R + throttle;
-			L = 0.500 * L + throttle;
-			F = 0.500 * F + throttle;
-			B = 0.500 * B + throttle;
+			R = min + 0.200 * R + throttle;
+			L = min + 0.200 * L + throttle;
+			F = min + 0.200 * F + throttle;
+			B = min + 0.200 * B + throttle;
 
 			//limitter
-			if ( R > 2.0 ) R = 2.0;
-			if ( R < 1.0 ) R = 1.0;
-			if ( L > 2.0 ) L = 2.0;
-			if ( L < 1.0 ) L = 1.0;
-			if ( F > 2.0 ) F = 2.0;
-			if ( F < 1.0 ) F = 1.0;
-			if ( B > 2.0 ) B = 2.0;
-			if ( B < 1.0 ) B = 1.0;
+			if ( R > max ) R = max;
+			if ( R < min ) R = min;
+			if ( L > max ) L = max;
+			if ( L < min ) L = min;
+			if ( F > max ) F = max;
+			if ( F < min ) F = min;
+			if ( B > max ) B = max;
+			if ( B < min ) B = min;
 
 			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
 			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
@@ -388,15 +389,10 @@ int main ( void ) {
 
 		}
 
-		R = 1.0;
-		L = 1.0;
-		F = 1.0;
-		B = 1.0;
-
-		pwm.set_duty_cycle ( RIGHT_MOTOR , R );
-		pwm.set_duty_cycle ( LEFT_MOTOR  , L );
-		pwm.set_duty_cycle ( FRONT_MOTOR , F );
-		pwm.set_duty_cycle ( REAR_MOTOR  , B );
+		pwm.set_duty_cycle ( RIGHT_MOTOR , min );
+		pwm.set_duty_cycle ( LEFT_MOTOR  , min );
+		pwm.set_duty_cycle ( FRONT_MOTOR , min );
+		pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
 		led.setColor ( Colors :: Blue );
 
