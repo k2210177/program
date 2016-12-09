@@ -268,12 +268,13 @@ int main ( void ) {
 
 	short c = 0 , PauseFlag = 1 , EndFlag = 0;
 	float ad , gd;
-	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
+	float min = 1.0 , max = 2.0;
+	float R , L , F , B;
 
-	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
-	pwm.set_duty_cycle ( LEFT_MOTOR  , L );
-	pwm.set_duty_cycle ( FRONT_MOTOR , F );
-	pwm.set_duty_cycle ( REAR_MOTOR  , B );
+	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
+	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
+	pwm.set_duty_cycle ( FRONT_MOTOR , min );
+	pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
 	while ( EndFlag == 0 ) {
 
@@ -330,20 +331,20 @@ int main ( void ) {
 			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = 1.000 * R + 0.000;
-			L = 1.000 * L + 0.000;
-			F = 1.000 * F + 0.000;
-			B = 1.000 * B + 0.000;
+			R = min + R * 1.000;
+			L = min + L * 1.000;
+			F = min + F * 1.000;
+			B = min + B * 1.000;
 
 			//limitter
-			if ( R > 2.0 ) R = 2.0;
-			if ( R < 1.0 ) R = 1.0;
-			if ( L > 2.0 ) L = 2.0;
-			if ( L < 1.0 ) L = 1.0;
-			if ( F > 2.0 ) F = 2.0;
-			if ( F < 1.0 ) F = 1.0;
-			if ( B > 2.0 ) B = 2.0;
-			if ( B < 1.0 ) B = 1.0;
+			if ( R > max ) R = max;
+			if ( R < min ) R = min;
+			if ( L > max ) L = max;
+			if ( L < min ) L = min;
+			if ( F > max ) F = max;
+			if ( F < min ) F = min;
+			if ( B > max ) B = max;
+			if ( B < min ) B = min;
 
 			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
 			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
@@ -365,15 +366,10 @@ int main ( void ) {
 
 		}
 
-		R = 1.0;
-		L = 1.0;
-		F = 1.0;
-		B = 1.0;
-
-		pwm.set_duty_cycle ( RIGHT_MOTOR , R );
-		pwm.set_duty_cycle ( LEFT_MOTOR  , L );
-		pwm.set_duty_cycle ( FRONT_MOTOR , F );
-		pwm.set_duty_cycle ( REAR_MOTOR  , B );
+		pwm.set_duty_cycle ( RIGHT_MOTOR , min );
+		pwm.set_duty_cycle ( LEFT_MOTOR  , min );
+		pwm.set_duty_cycle ( FRONT_MOTOR , min );
+		pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
 		led.setColor ( Colors :: Blue );
 
@@ -396,7 +392,7 @@ int main ( void ) {
 						c = 1;
 						if ( joy_button[3] == 1 ) {
 							PauseFlag = 0;
-							printf ( "RESTART\n" );
+							printf ( "START\n" );
 						}
 						if ( joy_button[0] == 1 ) {
 							PauseFlag = 0;

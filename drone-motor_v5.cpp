@@ -274,8 +274,8 @@ int main ( void ) {
 	float SRx , SRy , SLx , SLy;
 	float throttle , rroll , rpitch , ryaw , cyaw;
 	float ad , gd;
-	float R , L , F , B;
 	float min = 1.0 , max = 2.0;
+	float R , L , F , B;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
 	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
@@ -362,10 +362,10 @@ int main ( void ) {
 			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = min + 0.200 * R + throttle;
-			L = min + 0.200 * L + throttle;
-			F = min + 0.200 * F + throttle;
-			B = min + 0.200 * B + throttle;
+			R = min + throttle + 0.200 * R;
+			L = min + throttle + 0.200 * L;
+			F = min + throttle + 0.200 * F;
+			B = min + throttle + 0.200 * B;
 
 			//limitter
 			if ( R > max ) R = max;
@@ -385,7 +385,8 @@ int main ( void ) {
 			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
 					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
-					,roll ,pitch ,yaw
+					,SRx ,SRy ,SLx ,SLy
+					,roll ,pitch ,yaw ,throttle ,rroll ,rpitch ,ryaw
 					,R ,L ,F ,B
 			       );
 			fs << outstr << endl;
