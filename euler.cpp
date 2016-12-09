@@ -92,17 +92,23 @@ int main(int argc, char *argv[])
     float ax, ay, az;
     float gx, gy, gz;
     float mx, my, mz;
-//-------------------------------------------------------------------------
+
+    float dgx = 0.0 , dgy = 0.0 , dgz= 0.0;
+    float roll = 0.0 , pitch = 0.0 , yaw = 0.0;
+
+    short dt = 2000;
 
     while(1) {
-        sensor->update();
-        sensor->read_accelerometer(&ax, &ay, &az);
-        sensor->read_gyroscope(&gx, &gy, &gz);
-        sensor->read_magnetometer(&mx, &my, &mz);
-        printf("Acc: %+7.3f %+7.3f %+7.3f  ", ax, ay, az);
-        printf("Gyr: %+8.3f %+8.3f %+8.3f  ", gx, gy, gz);
-        printf("Mag: %+7.3f %+7.3f %+7.3f\n", mx, my, mz);
 
-       usleep(500000);
+	sensor->update();
+	sensor->read_accelerometer(&ax, &ay, &az);
+	sensor->read_gyroscope(&gx, &gy, &gz);
+	sensor->read_magnetometer(&mx, &my, &mz);
+
+	roll  = roll  + ( gx - dgx ) * dt;
+	pitch = pitch + ( gy - dgy ) * dt;
+	yaw   = yaw   + ( gz - dgz ) * dt;
+
+	usleep(2000);
     }
 }
