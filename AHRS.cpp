@@ -1,28 +1,3 @@
-/*
-This code is provided under the BSD license.
-Copyright (c) 2014, Emlid Limited. All rights reserved.
-Written by Igor Vereninov and Mikhail Avkhimenia
-twitter.com/emlidtech || www.emlid.com || info@emlid.com
-
-Application: Mahory AHRS algorithm supplied with data from MPU9250 and LSM9DS1.
-Outputs roll, pitch and yaw in the console and sends quaternion
-over the network - it can be used with 3D IMU visualizer located in
-Navio/Applications/3D IMU visualizer.
-
-To run this app navigate to the directory containing it and run following commands:
-make
-sudo ./AHRS -i [sensor name] ipaddress portnumber
-Sensors names: mpu is MPU9250, lsm is LSM9DS1.
-If you want to visualize IMU data on another machine pass it's address and port
-For print help:
-./AHRS -h
-
-To achieve stable loop you need to run this application with a high priority
-on a linux kernel with real-time patch. Raspbian distribution with real-time
-kernel is available at emlid.com and priority can be set with chrt command:
-chrt -f -p 99 PID
-*/
-
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -112,15 +87,11 @@ void imuSetup()
 	for(int i = 0; i<100; i++)
 	{
 		imu->update();
-    imu->read_gyroscope(&gx, &gy, &gz);
+		imu->read_gyroscope(&gx, &gy, &gz);
 
-    gx *= 180 / PI;
-    gy *= 180 / PI;
-    gz *= 180 / PI;
-
-		offset[0] += (-gx*0.0175);
-		offset[1] += (-gy*0.0175);
-		offset[2] += (-gz*0.0175);
+		offset[0] += (-gx);
+		offset[1] += (-gy);
+		offset[2] += (-gz);
 		usleep(10000);
 	}
 	offset[0]/=100.0;
@@ -156,11 +127,8 @@ void imuLoop()
     ax /= G_SI;
     ay /= G_SI;
     az /= G_SI;
-    gx *= 180 / PI;
-    gy *= 180 / PI;
-    gz *= 180 / PI;
 
-    ahrs.updateIMU(ax, ay, az, gx*0.0175, gy*0.0175, gz*0.0175, dt);
+    ahrs.updateIMU(ax, ay, az, gx , gy , gz , dt);
 
     // Accel + gyro + mag.
     // Soft and hard iron calibration required for proper function.

@@ -312,9 +312,7 @@ int main ( void ) {
 
 			imuLoop ();
 
-			roll  =   roll  * PI / 180.0;
-			pitch =   pitch * PI / 180.0;
-			yaw   = - yaw   * PI / 180.0;
+			yaw = -yaw;
 
 			ad =   ax;
 			ax =   ay;
