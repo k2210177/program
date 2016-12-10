@@ -50,7 +50,34 @@ unsigned long previoustime, currenttime;
 float dtsumm = 0;
 int isFirst = 1;
 
+void imuSetup ( void ) {
 
+	//MPU initialization
+
+	imu->initialize();
+
+	printf( "Beginning Gyro calibration...\n" );
+
+	for( int i = 0 ; i < 100; i++ ) {
+
+		imu->update();
+		imu->read_gyroscope( &gx , &gy , &gz);
+
+		offset[0] += ( -gx );
+		offset[1] += ( -gy );
+		offset[2] += ( -gz );
+
+		usleep(10000);
+
+	}
+
+	offset[0] /= 100.0;
+	offset[1] /= 100.0;
+	offset[2] /= 100.0;
+
+	printf( "Offsets are: %f %f %f\n" ,offset[0] ,offset[1] ,offset[2] );
+	ahrs.setGyroOffset( offset[0] , offset[1] , offset[2] );
+}
 
 void imuLoop ( void ) {
 
@@ -156,6 +183,8 @@ int main ( void ) {
 		printf( "Sensor not enable\n") ;
 		return EXIT_FAILURE;
 	}
+
+	imuSetup();
 
 	//flightlog setting
 	char filename[] = "accelerometer.txt";
