@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <conio.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
@@ -188,7 +187,7 @@ int main ( void ) {
 	imuSetup();
 
 	//flightlog setting
-	char filename[] = "accelerometer.txt";
+	char filename[] = "angle.txt";
 	char outstr[255];
 	std::ofstream fs(filename);
 
@@ -203,13 +202,13 @@ int main ( void ) {
 
 	//main loop
 
-	float ad;
+	float gd;
 	float Kroll , Kpitch , Kyaw;
 
 	printf ( "gx calibration\nPlease push the Enter when you are ready" );
 	getchar();
 
-	for ( int i = 0 ; i < 5000 ; i++ ) {
+	for ( int i = 0 ; i < 1000 ; i++ ) {
 
 		gettimeofday ( &tval , NULL );
 		past_time = now_time;
