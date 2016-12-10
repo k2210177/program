@@ -230,7 +230,41 @@ int main ( void ) {
 
 	}
 
-	printf ( "Kx = %f , Ky = %f , Kz = %f\n" ,Kx ,Ky ,Kz ); 
+	printf ( "Kx = %f , Ky = %f , Kz = %f\n" ,Kx ,Ky ,Kz );
+
+	sleep(3);
+
+	printf ( "loging start\n" ); 
+
+	while (1) {
+
+		gettimeofday ( &tval , NULL );
+		past_time = now_time;
+		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+		interval  = now_time - past_time;
+
+		imuLoop ();
+
+		ad =   ax;
+		ax =   ay;
+		ay =   ad;
+		az = - az;
+
+		ax *= Kx;
+		ay *= Ky;
+		az *= Kz;
+
+		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,ax ,ay ,az );
+		fs << outstr << endl;
+
+		do{
+			gettimeofday ( &tval , NULL );
+			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+		}while( interval < 2000 );
+
+	}
+
+	fs.close();
 
 	return 0;
 

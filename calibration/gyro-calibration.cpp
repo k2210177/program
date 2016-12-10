@@ -202,17 +202,10 @@ int main ( void ) {
 
 	//main loop
 
-	float ad;
-	float Kx , Ky , Kz;
+	float gd;
+	float Kroll = 0.0 , Kpitch = 0.0 , Kyaw = 0.0;
 
-	printf( "Kx = " );
-	scanf( "%f" ,&Kx );
-	printf( "Ky = " );
-	scanf( "%f" ,&Ky );
-	printf( "Kz = " );
-	scanf( "%f" ,&Kz );
-
-	while (1) {
+	while(1) {
 
 		gettimeofday ( &tval , NULL );
 		past_time = now_time;
@@ -221,17 +214,7 @@ int main ( void ) {
 
 		imuLoop ();
 
-		ad =   ax;
-		ax =   ay;
-		ay =   ad;
-		az = - az;
-
-		ax *= Kx;
-		ay *= Ky;
-		az *= Kz;
-
-		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,ax ,ay ,az );
-		fs << outstr << endl;
+		if 		
 
 		do{
 			gettimeofday ( &tval , NULL );
@@ -240,7 +223,7 @@ int main ( void ) {
 
 	}
 
-	fs.close();
+	printf ( "Kx = %f , Ky = %f , Kz = %f\n" ,Kx ,Ky ,Kz ); 
 
 	return 0;
 
