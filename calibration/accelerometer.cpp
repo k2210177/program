@@ -202,12 +202,11 @@ int main ( void ) {
 
 	//main loop
 
-	short a;
 	float ad;
 	float Kx = 0.0 , Ky = 0.0 , Kz = 0.0;
 
 	printf ( "ax calibration\nPlease push the Enter when you are ready" );
-	scanf ( "%d" ,&a );
+	getchar();
 
 	for ( int i = 0 ; i < 1000 ; i++ ) {
 
@@ -233,7 +232,7 @@ int main ( void ) {
 	}
 
 	printf ( "ay calibration\nPlease push the Enter when you are ready" );
-	scanf ( "%d" ,&a );
+	getchar();
 
 	for ( int i = 0 ; i < 1000 ; i++ ) {
 
@@ -259,7 +258,7 @@ int main ( void ) {
 	}
 
 	printf ( "az calibration\nPlease push the Enter when you are ready" );
-	scanf ( "%d" ,&a );
+	getchar();
 
 	for ( int i = 0 ; i < 1000 ; i++ ) {
 
