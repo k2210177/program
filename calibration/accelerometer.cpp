@@ -224,6 +224,8 @@ int main ( void ) {
 
 		Kx += 1.0 / ax / 1000;
 
+		printf ( "ax = %f \n" ,ax );
+
 		do{
 			gettimeofday ( &tval , NULL );
 			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
