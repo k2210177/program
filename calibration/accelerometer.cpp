@@ -205,6 +205,7 @@ int main ( void ) {
 	float ad;
 	float Kx , Ky , Kz;
 	float ave_Kx = 0.0 , ave_Ky = 0.0 , ave_Kz = 0.0;
+	float ave_ax = 0.0 , ave_ay = 0.0 . ave_az = 0.0;
 
 	for ( int i = 0 ; i < 1000 ; i++ ) {
 
@@ -268,6 +269,10 @@ int main ( void ) {
 		ay *= ave_Ky;
 		az *= ave_Kz;
 
+		ave_ax += ax;
+		ave_ay += ay;
+		ave_az += az;
+
 		printf( "ax = %f , ay = %f , az = %f\n" ,ax ,ay ,az );
 
 		do{
@@ -276,6 +281,12 @@ int main ( void ) {
 		}while( interval < 2000 );
 
 	}
+
+	ave_ax /= 1000;
+	ave_ay /= 1000;
+	ave_xz /= 1000;
+
+	printf( "ave_ax = %f , ave_ay = %f , ave_az = %f\n" ,ave_ax ,ave_ay ,ave_az );
 
 	return 0;
 
