@@ -32,8 +32,8 @@ AHRS    ahrs;   // Mahony AHRS
 
 // Sensor data
 
-float ax , ay , az;
-float gx , gy , gz;
+float ax , ay , az , ad;
+float gx , gy , gz , gd;
 float mx , my , mz;
 
 // Orientation data
@@ -138,6 +138,11 @@ void imuLoop ( void ) {
 
 	}
 
+	gd =   gx;
+	gx =   gy;
+	gy =   gd;
+	gz = - gz;
+
 }
 
 InertialSensor* create_inertial_sensor ( char *sensor_name ) {
@@ -202,11 +207,15 @@ int main ( void ) {
 
 	//main loop
 
-	float gd;
-	float Kroll , Kpitch , Kyaw;
+	float dgx , dgy , dgz;
+	float Kroll = 0.0 , Kpitch = 0.0 , Kyaw = 0.0;
 
-	printf ( "gx calibration\nPlease push the Enter when you are ready" );
+	printf ( "roll calibration\nPlease push the Enter when you are ready" );
 	getchar();
+
+	imuLoop ();
+
+	dgx = gx;
 
 	for ( int i = 0 ; i < 5000 ; i++ ) {
 
@@ -222,12 +231,20 @@ int main ( void ) {
 			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
 		}while( interval < 2000 );
 
+		Kroll += ( dgx + gx ) / 2.0 * interval;
+
+		dgx = gx;
+
 	}
 
-	Kroll = 90 / roll;
+	Kroll = 90.0 / roll;
 
-	printf ( "ay calibration\nPlease push the Enter when you are ready" );
+	printf ( "pitch calibration\nPlease push the Enter when you are ready" );
 	getchar();
+
+	imuLoop ();
+
+	dgy = gy;
 
 	for ( int i = 0 ; i < 5000 ; i++ ) {
 
@@ -236,19 +253,27 @@ int main ( void ) {
 		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
 		interval  = now_time - past_time;
 
-		imuLoop ();
-
 		do{
 			gettimeofday ( &tval , NULL );
 			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
 		}while( interval < 2000 );
 
+		imuLoop ();
+
+		Kpitch = ( dgy + gy ) / 2.0 * interval;
+
+		dgy = gy;
+
 	}
 
-	Kpitch = 90 / pitch;
+	Kpitch = 90.0 / pitch;
 
-	printf ( "az calibration\nPlease push the Enter when you are ready" );
+	printf ( "yaw calibration\nPlease push the Enter when you are ready" );
 	getchar();
+
+	imuLoop ();
+
+	dgz = gz;
 
 	for ( int i = 0 ; i < 5000 ; i++ ) {
 
@@ -257,16 +282,20 @@ int main ( void ) {
 		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
 		interval  = now_time - past_time;
 
-		imuLoop ();
-
 		do{
 			gettimeofday ( &tval , NULL );
 			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
 		}while( interval < 2000 );
 
+		imuLoop ();
+
+		Kyaw = ( dgz + gz ) / 2.0 * interval;
+
+		dgz = gz;
+
 	}
 
-	Kyaw = 90 / yaw;
+	Kyaw = 90.0 / yaw;
 
 	printf ( "Kroll = %f , Kpitch = %f , Kyaw = %f\n" ,Kroll ,Kpitch ,Kyaw );
 
