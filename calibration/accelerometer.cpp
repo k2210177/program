@@ -206,7 +206,7 @@ int main ( void ) {
 	float Kx , Ky , Kz;
 	float ave_Kx = 0.0 , ave_Ky = 0.0 , ave_Kz = 0.0;
 
-	for ( int i = 0 ; i < 100 ; i++ ) {
+	for ( int i = 0 ; i < 1000 ; i++ ) {
 
 		gettimeofday ( &tval , NULL );
 		past_time = now_time;
@@ -237,6 +237,10 @@ int main ( void ) {
 		}while( interval < 2000 );
 
 	}
+
+	ave_Kx /= 100;
+	ave_Ky /= 100;
+	ave_Kz /= 100;
 
 	printf ( "ave_Kz = %f , ave_Ky = %f , ave_Kz = %f\n" ,ave_Kx ,ave_Ky ,ave_Kz ); 
 
