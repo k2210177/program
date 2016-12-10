@@ -238,13 +238,40 @@ int main ( void ) {
 
 	}
 
-	ave_Kx /= 100;
-	ave_Ky /= 100;
-	ave_Kz /= 100;
+	ave_Kx /= 1000;
+	ave_Ky /= 1000;
+	ave_Kz /= 1000;
 
-	printf ( "ave_Kz = %f , ave_Ky = %f , ave_Kz = %f\n" ,ave_Kx ,ave_Ky ,ave_Kz ); 
+	printf ( "ave_Kx = %f , ave_Ky = %f , ave_Kz = %f\n" ,ave_Kx ,ave_Ky ,ave_Kz ); 
 
 	fs.close();
+
+	for ( int i = 0 ; i < 1000 ; i++ ) {
+
+		gettimeofday ( &tval , NULL );
+		past_time = now_time;
+		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+		interval  = now_time - past_time;
+
+		imuLoop ();
+
+		ad =   ax;
+		ax =   ay;
+		ay =   ad;
+		az = - az;
+
+		ax *= ave_Kx;
+		ay *= ave_Ky;
+		az *= ave_Kz;
+
+		printf( "ax = %f , ay = %f , az = %f\n" ,ax ,ay ,az );
+
+		do{
+			gettimeofday ( &tval , NULL );
+			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+		}while( interval < 2000 );
+
+	}
 
 	return 0;
 
