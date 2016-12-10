@@ -202,8 +202,12 @@ int main ( void ) {
 
 	//main loop
 
+	short a;
 	float ad;
 	float Kx = 0.0 , Ky = 0.0 , Kz = 0.0;
+
+	printf ( "ax calibration\nPlease push the Enter when you are ready" );
+	scanf ( "%d" ,&a );
 
 	for ( int i = 0 ; i < 1000 ; i++ ) {
 
@@ -220,7 +224,57 @@ int main ( void ) {
 		az = - az;
 
 		Kx += G_SI / ax / 1000;
+
+		do{
+			gettimeofday ( &tval , NULL );
+			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+		}while( interval < 2000 );
+
+	}
+
+	printf ( "ay calibration\nPlease push the Enter when you are ready" );
+	scanf ( "%d" ,&a );
+
+	for ( int i = 0 ; i < 1000 ; i++ ) {
+
+		gettimeofday ( &tval , NULL );
+		past_time = now_time;
+		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+		interval  = now_time - past_time;
+
+		imuLoop ();
+
+		ad =   ax;
+		ax =   ay;
+		ay =   ad;
+		az = - az;
+
 		Ky += G_SI / ay / 1000;
+
+		do{
+			gettimeofday ( &tval , NULL );
+			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+		}while( interval < 2000 );
+
+	}
+
+	printf ( "az calibration\nPlease push the Enter when you are ready" );
+	scanf ( "%d" ,&a );
+
+	for ( int i = 0 ; i < 1000 ; i++ ) {
+
+		gettimeofday ( &tval , NULL );
+		past_time = now_time;
+		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+		interval  = now_time - past_time;
+
+		imuLoop ();
+
+		ad =   ax;
+		ax =   ay;
+		ay =   ad;
+		az = - az;
+
 		Kz += G_SI / az / 1000;
 
 		do{
