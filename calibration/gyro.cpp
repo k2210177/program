@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <conio.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
@@ -202,10 +203,13 @@ int main ( void ) {
 
 	//main loop
 
-	float gd;
-	float Kroll = 0.0 , Kpitch = 0.0 , Kyaw = 0.0;
+	float ad;
+	float Kroll , Kpitch , Kyaw;
 
-	while(1) {
+	printf ( "gx calibration\nPlease push the Enter when you are ready" );
+	getchar();
+
+	for ( int i = 0 ; i < 5000 ; i++ ) {
 
 		gettimeofday ( &tval , NULL );
 		past_time = now_time;
@@ -214,7 +218,26 @@ int main ( void ) {
 
 		imuLoop ();
 
-		if 		
+		do{
+			gettimeofday ( &tval , NULL );
+			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+		}while( interval < 2000 );
+
+	}
+
+	Kroll = 90 / roll;
+
+	printf ( "ay calibration\nPlease push the Enter when you are ready" );
+	getchar();
+
+	for ( int i = 0 ; i < 1000 ; i++ ) {
+
+		gettimeofday ( &tval , NULL );
+		past_time = now_time;
+		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+		interval  = now_time - past_time;
+
+		imuLoop ();
 
 		do{
 			gettimeofday ( &tval , NULL );
@@ -223,7 +246,64 @@ int main ( void ) {
 
 	}
 
-	printf ( "Kx = %f , Ky = %f , Kz = %f\n" ,Kx ,Ky ,Kz ); 
+	Kpitch = 90 / pitch;
+
+	printf ( "az calibration\nPlease push the Enter when you are ready" );
+	getchar();
+
+	for ( int i = 0 ; i < 1000 ; i++ ) {
+
+		gettimeofday ( &tval , NULL );
+		past_time = now_time;
+		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+		interval  = now_time - past_time;
+
+		imuLoop ();
+
+		do{
+			gettimeofday ( &tval , NULL );
+			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+		}while( interval < 2000 );
+
+	}
+
+	Kyaw = 90 / yaw;
+
+	printf ( "Kroll = %f , Kpitch = %f , Kyaw = %f\n" ,Kroll ,Kpitch ,Kyaw );
+
+	sleep(3);
+
+	printf ( "loging start\n" ); 
+
+	while (1) {
+
+		gettimeofday ( &tval , NULL );
+		past_time = now_time;
+		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+		interval  = now_time - past_time;
+
+		imuLoop ();
+
+		gd =   gx;
+		gx =   gy;
+		gy =   gd;
+		gz = - gz;
+
+		gx *= Kroll;
+		gy *= Kpitch;
+		gz *= Kyaw;
+
+		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,gx ,gy ,gz );
+		fs << outstr << endl;
+
+		do{
+			gettimeofday ( &tval , NULL );
+			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+		}while( interval < 2000 );
+
+	}
+
+	fs.close();
 
 	return 0;
 
