@@ -219,9 +219,9 @@ int main ( void ) {
 		ay =   ad;
 		az = - az;
 
-		ave_Kx += G_SI / ax / 1000;
-		ave_Ky += G_SI / ay / 1000;
-		ave_Kz += G_SI / az / 1000;
+		Kx += G_SI / ax / 1000;
+		Ky += G_SI / ay / 1000;
+		Kz += G_SI / az / 1000;
 
 		do{
 			gettimeofday ( &tval , NULL );
@@ -230,7 +230,7 @@ int main ( void ) {
 
 	}
 
-	printf ( "ave_Kx = %f , ave_Ky = %f , ave_Kz = %f\n" ,ave_Kx ,ave_Ky ,ave_Kz ); 
+	printf ( "Kx = %f , Ky = %f , Kz = %f\n" ,Kx ,Ky ,Kz ); 
 
 	return 0;
 

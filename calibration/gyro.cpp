@@ -284,7 +284,7 @@ int main ( void ) {
 
 	ave_ax /= 1000;
 	ave_ay /= 1000;
-	ave_az /= 1000;
+	ave_xz /= 1000;
 
 	printf( "ave_ax = %f , ave_ay = %f , ave_az = %f\n" ,ave_ax ,ave_ay ,ave_az );
 

@@ -203,7 +203,14 @@ int main ( void ) {
 	//main loop
 
 	float ad;
-	float Kx =  , Ky =  , Kz = ;
+	float Kx , Ky , Kz;
+
+	printf( "Kx = " );
+	scanf( "%f" ,&Kx );
+	printf( "Ky = " );
+	scanf( "%f" ,&Ky );
+	printf( "Kz = " );
+	scanf( "%f" ,&Kz );
 
 	while (1) {
 
