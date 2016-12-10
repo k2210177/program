@@ -205,7 +205,7 @@ int main ( void ) {
 	float ad;
 	float Kx , Ky , Kz;
 	float ave_Kx = 0.0 , ave_Ky = 0.0 , ave_Kz = 0.0;
-	float ave_ax = 0.0 , ave_ay = 0.0 . ave_az = 0.0;
+	float ave_ax = 0.0 , ave_ay = 0.0 , ave_az = 0.0;
 
 	for ( int i = 0 ; i < 1000 ; i++ ) {
 
