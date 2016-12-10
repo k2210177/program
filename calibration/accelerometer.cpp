@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 #include "../../Navio2/C++/Navio/MPU9250.h"
 #include "../../Navio2/C++/Navio/LSM9DS1.h"
-#include "AHRS.hpp"
+#include "../AHRS.hpp"
 
 #define G_SI 9.80665
 #define PI   3.14159
@@ -156,8 +156,6 @@ int main ( void ) {
 		printf( "Sensor not enable\n") ;
 		return EXIT_FAILURE;
 	}
-
-	imuSetup();
 
 	//flightlog setting
 	char filename[] = "accelerometer.txt";
