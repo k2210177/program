@@ -1,5 +1,5 @@
 // 12月10日 作成
-// 加速度センサ較正プログラム
+// 角度較正プログラム
 
 #include <iostream>
 #include <iomanip>
@@ -208,7 +208,7 @@ int main ( void ) {
 	printf ( "gx calibration\nPlease push the Enter when you are ready" );
 	getchar();
 
-	for ( int i = 0 ; i < 1000 ; i++ ) {
+	for ( int i = 0 ; i < 5000 ; i++ ) {
 
 		gettimeofday ( &tval , NULL );
 		past_time = now_time;
@@ -229,7 +229,7 @@ int main ( void ) {
 	printf ( "ay calibration\nPlease push the Enter when you are ready" );
 	getchar();
 
-	for ( int i = 0 ; i < 1000 ; i++ ) {
+	for ( int i = 0 ; i < 5000 ; i++ ) {
 
 		gettimeofday ( &tval , NULL );
 		past_time = now_time;
@@ -250,7 +250,7 @@ int main ( void ) {
 	printf ( "az calibration\nPlease push the Enter when you are ready" );
 	getchar();
 
-	for ( int i = 0 ; i < 1000 ; i++ ) {
+	for ( int i = 0 ; i < 5000 ; i++ ) {
 
 		gettimeofday ( &tval , NULL );
 		past_time = now_time;
@@ -283,16 +283,11 @@ int main ( void ) {
 
 		imuLoop ();
 
-		gd =   gx;
-		gx =   gy;
-		gy =   gd;
-		gz = - gz;
+		roll  *= Kroll;
+		pitch *= Kpitch;
+		yaw   *= Kyaw;
 
-		gx *= Kroll;
-		gy *= Kpitch;
-		gz *= Kyaw;
-
-		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,gx ,gy ,gz );
+		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,Kroll ,Kpitch ,Kyaw );
 		fs << outstr << endl;
 
 		do{
