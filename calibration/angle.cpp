@@ -204,7 +204,7 @@ int main ( void ) {
 	now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
 	past_time = now_time;
 	interval  = now_time - past_time;
-
+/*
 	//main loop
 
 	float dgx , dgy , dgz;
@@ -302,7 +302,7 @@ int main ( void ) {
 	sleep(3);
 
 	printf ( "loging start\n" ); 
-
+*/
 	while (1) {
 
 		gettimeofday ( &tval , NULL );
@@ -311,12 +311,12 @@ int main ( void ) {
 		interval  = now_time - past_time;
 
 		imuLoop ();
-
+/*
 		roll  *= Kroll;
 		pitch *= Kpitch;
 		yaw   *= Kyaw;
-
-		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,Kroll ,Kpitch ,Kyaw );
+*/
+		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,roll ,pitch ,yaw );
 		fs << outstr << endl;
 
 		do{
