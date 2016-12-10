@@ -222,7 +222,7 @@ int main ( void ) {
 		ay =   ad;
 		az = - az;
 
-		Kx += G_SI / ax / 1000;
+		Kx += 1.0 / ax / 1000;
 
 		do{
 			gettimeofday ( &tval , NULL );
@@ -248,7 +248,7 @@ int main ( void ) {
 		ay =   ad;
 		az = - az;
 
-		Ky += G_SI / ay / 1000;
+		Ky += 1.0 / ay / 1000;
 
 		do{
 			gettimeofday ( &tval , NULL );
@@ -274,7 +274,7 @@ int main ( void ) {
 		ay =   ad;
 		az = - az;
 
-		Kz += G_SI / az / 1000;
+		Kz += 1.0 / az / 1000;
 
 		do{
 			gettimeofday ( &tval , NULL );
