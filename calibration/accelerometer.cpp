@@ -228,6 +228,8 @@ int main ( void ) {
 		ave_Ky += Ky;
 		ave_Kz += Kz;
 
+		printf( "ax = %f , ay = %f , az = %f\n" ,ax ,ay ,az );
+
 		sprintf( outstr , "%lu %lu %f %f %f %f %f %f" ,now_time ,interval ,ax ,ay ,az ,Kx ,Ky ,Kz);
 		fs << outstr << endl;
 
@@ -245,6 +247,8 @@ int main ( void ) {
 	printf ( "ave_Kx = %f , ave_Ky = %f , ave_Kz = %f\n" ,ave_Kx ,ave_Ky ,ave_Kz ); 
 
 	fs.close();
+
+	sleep(5);
 
 	for ( int i = 0 ; i < 1000 ; i++ ) {
 
