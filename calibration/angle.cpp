@@ -17,12 +17,12 @@
 #include <linux/joystick.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "../Navio2/C++/Navio/MPU9250.h"
-#include "../Navio2/C++/Navio/LSM9DS1.h"
-#include "../Navio2/C++/Navio/PWM.h"
-#include "../Navio2/C++/Navio/RGBled.h"
-#include "../Navio2/C++/Navio/Util.h"
-#include "AHRS.hpp"
+#include "../../Navio2/C++/Navio/MPU9250.h"
+#include "../../Navio2/C++/Navio/LSM9DS1.h"
+#include "../../Navio2/C++/Navio/PWM.h"
+#include "../../Navio2/C++/Navio/RGBled.h"
+#include "../../Navio2/C++/Navio/Util.h"
+#include "../AHRS.hpp"
 
 #define RIGHT_MOTOR 0
 #define LEFT_MOTOR 1
