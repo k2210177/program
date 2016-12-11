@@ -28,8 +28,6 @@
 #define LEFT_MOTOR 1
 #define FRONT_MOTOR 2
 #define REAR_MOTOR 3
-#define SERVO_MIN 1.0 /*ms*/
-#define SERVO_MAX 2.0 /*ms*/
 #define G_SI 9.80665
 #define PI   3.14159
 #define JOY_DEV "/dev/input/js0"
@@ -277,12 +275,13 @@ int main ( void ) {
 	//main loop
 
 	short c = 0 , PauseFlag = 1 , EndFlag = 0;
-	float ad , gd;
+	float min = 1.0 , max = 2.0;
 	float cyaw;
 	float SRx , SRy , SLx , SLy;
+	float throttle;
 	float rroll , rpitch , ryaw;
-	float min = 1.0 , max = 2.0;
 	float R , L , F , B;
+	float dR , dL , dF , dB;
 	float Ra = 3.7808 , Rb = - 3.8138;
 	float La = 3.5419 , Lb = - 3.2927;
 	float Fa = 3.5419 , Fb = - 3.3435;
@@ -351,6 +350,11 @@ int main ( void ) {
 			rpitch   = SLy;
 			ryaw     = SRx;
 */
+			dR = ( SRy - Rb ) / Ra;
+			dL = ( SRy - Lb ) / La;
+			dF = ( SRy - Fb ) / Fa;
+			dB = ( SRy - Bb ) / Ba;
+
 			imuLoop ();
 
 			yaw -= cyaw;
@@ -361,10 +365,10 @@ int main ( void ) {
 			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = Ra * throttle + Rb + R * 1.000;
-			L = La * throttle + Lb + L * 1.000;
-			F = Fa * throttle + Fb + F * 1.000;
-			B = Ba * throttle + Bb + B * 1.000;
+			R = min + dR + R * 1.000;
+			L = min + dL + L * 1.000;
+			F = min + dF + F * 1.000;
+			B = min + dB + B * 1.000;
 
 /*			//limitter
 			if ( R > max ) R = max;
