@@ -254,6 +254,7 @@ int main ( void ) {
 	//loging
 
 	printf ( "\ncalibration is over.\nPush Enter to start loging start\n" );
+	getchar();
 
 	while ( 1 ) {
 
