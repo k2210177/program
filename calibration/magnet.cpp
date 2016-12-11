@@ -236,9 +236,9 @@ int main ( void ) {
 
 		}
 
-		cm[i] = ( m[i][0] + m[i][1] ) / 2.0;
+		cm[i] = ( m[i][0] + m[i][2] ) / 2.0;
 
-		printf ( "cm[%c] = %f" ,c[i] ,cm[i] );
+		printf ( "cm[i] = %f\n" ,i ,cm[i] );
 
 	}
 
