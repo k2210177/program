@@ -278,8 +278,15 @@ int main ( void ) {
 
 	short c = 0 , PauseFlag = 1 , EndFlag = 0;
 	float ad , gd;
+	float cyaw;
+	float SRx , SRy , SLx , SLy;
+	float rroll , rpitch , ryaw;
 	float min = 1.0 , max = 2.0;
 	float R , L , F , B;
+	float Ra = 3.7808 , Rb = - 3.8138;
+	float La = 3.5419 , Lb = - 3.2927;
+	float Fa = 3.5419 , Fb = - 3.3435;
+	float Ba = 4.0857 , Bb = - 4.2365;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
 	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
@@ -289,6 +296,10 @@ int main ( void ) {
 	while ( EndFlag == 0 ) {
 
 		led.setColor ( Colors :: Red );
+
+		imuLoop();
+
+		cyaw = yaw;
 
 		while ( PauseFlag == 0 ) {
 
@@ -321,7 +332,28 @@ int main ( void ) {
 
 			}
 
+			SRx =  joy_axis[2] / 23170.0;
+			SRy = -joy_axis[3] / 23170.0;
+			SLx =  joy_axis[0] / 23170.0;
+			SLy =  joy_axis[1] / 23170.0;
+
+			if ( SRx >  1.0 ) SRx =  1.0;
+			if ( SRx < -1.0 ) SRx = -1.0;
+			if ( SRy >  1.0 ) SRy =  1.0;
+			if ( SRy <  0.0 ) SRy =  0.0;
+			if ( SLx >  1.0 ) SLx =  1.0;
+			if ( SLx < -1.0 ) SLx = -1.0;
+			if ( SLy >  1.0 ) SLy =  1.0;
+			if ( SLy < -1.0 ) SLy = -1.0;
+
+			throttle = SRy;
+/*			rroll    = SLx;
+			rpitch   = SLy;
+			ryaw     = SRx;
+*/
 			imuLoop ();
+
+			yaw -= cyaw;
 
 			//regulator
 			R =   0.858 * gy * 0.001 + 0.011 * gx * 0.001 - 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
@@ -329,12 +361,12 @@ int main ( void ) {
 			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = min + R * 1.000;
-			L = min + L * 1.000;
-			F = min + F * 1.000;
-			B = min + B * 1.000;
+			R = Ra * throttle + Rb + R * 1.000;
+			L = La * throttle + Lb + L * 1.000;
+			F = Fa * throttle + Fb + F * 1.000;
+			B = Ba * throttle + Bb + B * 1.000;
 
-			//limitter
+/*			//limitter
 			if ( R > max ) R = max;
 			if ( R < min ) R = min;
 			if ( L > max ) L = max;
@@ -343,7 +375,7 @@ int main ( void ) {
 			if ( F < min ) F = min;
 			if ( B > max ) B = max;
 			if ( B < min ) B = min;
-
+*/
 /*			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
 			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
@@ -354,7 +386,7 @@ int main ( void ) {
 			pwm.set_duty_cycle ( FRONT_MOTOR , min );
 			pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
-			printf ( "ax=%5.3f , ay=%5.3f , az=%5.3f , gx=%5.3f , gy=%5.3f , gz=%5.3f , mx=%5.3f , my=%5.3f , mz=%5.3f , roll=%5.3f , pitch=%5.3f , yaw=%5.3f\n" );
+			printf ( "R=%f L=%f F=%f B=%f\n" ,R ,L ,F ,B );
 
 			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
