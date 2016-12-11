@@ -19,20 +19,10 @@
 #include <arpa/inet.h>
 #include "../../Navio2/C++/Navio/MPU9250.h"
 #include "../../Navio2/C++/Navio/LSM9DS1.h"
-#include "../../Navio2/C++/Navio/PWM.h"
-#include "../../Navio2/C++/Navio/RGBled.h"
-#include "../../Navio2/C++/Navio/Util.h"
 #include "../AHRS.hpp"
 
-#define RIGHT_MOTOR 0
-#define LEFT_MOTOR 1
-#define FRONT_MOTOR 2
-#define REAR_MOTOR 3
-#define SERVO_MIN 1.0 /*ms*/
-#define SERVO_MAX 2.0 /*ms*/
 #define G_SI 9.80665
 #define PI   3.14159
-#define JOY_DEV "/dev/input/js0"
 
 using namespace std;
 
@@ -179,31 +169,6 @@ InertialSensor* create_inertial_sensor ( char *sensor_name ) {
 
 int main ( void ) {
 
-	//DualShock3 setting
-
-	int joy_fd( -1 ) , num_of_axis( 0 ) , num_of_buttons( 0 );
-	char name_of_joystick[80];
-	vector<char> joy_button;
-	vector<int> joy_axis;
-	js_event js;
-
-	if ( ( joy_fd = open( JOY_DEV ,O_RDONLY ) ) < 0 ) {
-		printf( "Failed to open %s" ,JOY_DEV );
-		cerr << "Failed to open " << JOY_DEV << endl;
-		return -1;
-	}
-
-	ioctl( joy_fd , JSIOCGAXES , &num_of_axis );
-	ioctl( joy_fd , JSIOCGBUTTONS , &num_of_buttons );
-	ioctl( joy_fd , JSIOCGNAME(80) , &name_of_joystick );
-
-	joy_button.resize( num_of_buttons , 0 );
-	joy_axis.resize( num_of_axis , 0 );
-
-	printf( "Joystick: %s axis: %d buttons: %d\n" ,name_of_joystick ,num_of_axis ,num_of_buttons );
-
-	fcntl( joy_fd, F_SETFL, O_NONBLOCK );
-
 	//IMU setting
 
 	char sensor_name[] = "mpu";
@@ -222,11 +187,6 @@ int main ( void ) {
 
 	imuSetup();
 
-	PWM pwm;
-	RGBled led;
-
-	if( !led.initialize() ) return EXIT_FAILURE;
-
 	if ( check_apm() ) {
 		return 1;
 	}
@@ -240,18 +200,10 @@ int main ( void ) {
 		}
 	}
 
-	for ( int i = 0 ; i < 4 ; i++ ) {
-		if ( !pwm.init( i ) ) {
-			fprintf( stderr , "Output Enable not set. Are you root?\n" );
-			return 0;
-		}
-		pwm.enable( i );
-		pwm.set_period( i , 500 );
-	}
-	printf( "\nReady to Fly !\n" );
+	printf ( "loging start\n" );
 
 	//flightlog setting
-	char filename[] = "flightlog.txt";
+	char filename[] = "angle.txt";
 	char outstr[255];
 	std::ofstream fs(filename);
 
@@ -269,154 +221,47 @@ int main ( void ) {
 	short c = 0 , PauseFlag = 1 , EndFlag = 0;
 	float ad , gd , dgx = 0.0 , dgy = 0.0 , dgz = 0.0;
 	float phi = 0.0 , th = 0.0 , psi = 0.0;
-	float min = 1.0 , max = 2.0;
-	float R , L , F , B;
 	float dt = 2000 * 0.000001;
 
-	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
-	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
-	pwm.set_duty_cycle ( FRONT_MOTOR , min );
-	pwm.set_duty_cycle ( REAR_MOTOR  , min );
+	while ( 1 ) {
 
-	while ( EndFlag == 0 ) {
+		gettimeofday ( &tval , NULL );
+		past_time = now_time;
+		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+		interval  = now_time - past_time;
 
-		led.setColor ( Colors :: Red );
+		imuLoop ();
 
-		while ( PauseFlag == 0 ) {
+		yaw = -yaw;
 
+		ad =   ax;
+		ax =   ay;
+		ay =   ad;
+		az = - az;
+
+		gd =   gx;
+		gx =   gy;
+		gy =   gd;
+		gz = - gz;
+
+		phi = phi + ( dgx + gx ) * dt / 2.0;
+		th  = th  + ( dgy + gy ) * dt / 2.0;
+		psi = psi + ( dgz + gz ) * dt / 2.0;
+
+		sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
+				,now_time ,interval
+				,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
+				,roll ,pitch ,yaw ,phi ,th ,psi );
+		fs << outstr << endl;
+
+		do{
 			gettimeofday ( &tval , NULL );
-			past_time = now_time;
-			now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
-			interval  = now_time - past_time;
-
-			read ( joy_fd , &js , sizeof ( js_event ) );
-
-			switch ( js.type & ~JS_EVENT_INIT ) {
-
-				case JS_EVENT_AXIS:
-					joy_axis[( int )js.number] = js.value;
-					break;
-
-				case JS_EVENT_BUTTON:
-					joy_button[( int )js.number] = js.value;
-					if ( js.value == 0 ) {
-						c = 0;
-					}
-					if ( js.value == 1 && c == 0 ) {
-						c = 1;
-						if ( joy_button[3] == 1 ) {
-							PauseFlag = 1;
-							printf ( "PAUSE\n" );
-						}
-					}
-					break;
-
-			}
-
-			imuLoop ();
-
-			yaw = -yaw;
-
-			ad =   ax;
-			ax =   ay;
-			ay =   ad;
-			az = - az;
-
-			gd =   gx;
-			gx =   gy;
-			gy =   gd;
-			gz = - gz;
-
-			phi = phi + ( dgx + gx ) * dt / 2.0;
-			th  = th  + ( dgy + gy ) * dt / 2.0;
-			psi = psi + ( dgz + gz ) * dt / 2.0;
-
-			//regulator
-			R =   0.858 * gy * 0.001 + 0.011 * gx * 0.001 - 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
-			L = - 0.696 * gy * 0.001 + 0.013 * gx * 0.001 - 2.414 * gz * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
-			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
-			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
-
-			R = min + R * 1.000;
-			L = min + L * 1.000;
-			F = min + F * 1.000;
-			B = min + B * 1.000;
-
-			//limitter
-			if ( R > max ) R = max;
-			if ( R < min ) R = min;
-			if ( L > max ) L = max;
-			if ( L < min ) L = min;
-			if ( F > max ) F = max;
-			if ( F < min ) F = min;
-			if ( B > max ) B = max;
-			if ( B < min ) B = min;
-
-			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
-			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
-			pwm.set_duty_cycle ( FRONT_MOTOR , F );
-			pwm.set_duty_cycle ( REAR_MOTOR  , B );
-
-			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
-					,now_time ,interval
-					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
-					,roll ,pitch ,yaw ,phi ,th ,psi
-					,R ,L ,F ,B
-			       );
-			fs << outstr << endl;
-
-			do{
-				gettimeofday ( &tval , NULL );
-				interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
-			}while( interval < 2000 );
-
-		}
-
-		pwm.set_duty_cycle ( RIGHT_MOTOR , min );
-		pwm.set_duty_cycle ( LEFT_MOTOR  , min );
-		pwm.set_duty_cycle ( FRONT_MOTOR , min );
-		pwm.set_duty_cycle ( REAR_MOTOR  , min );
-
-		led.setColor ( Colors :: Blue );
-
-		while ( PauseFlag == 1 ) {
-
-			read ( joy_fd , &js , sizeof ( js_event ) );
-
-			switch ( js.type & ~JS_EVENT_INIT ) {
-
-				case JS_EVENT_AXIS:
-					joy_axis[( int )js.number] = js.value;
-					break;
-
-				case JS_EVENT_BUTTON:
-					joy_button[( int )js.number] = js.value;
-					if ( js.value == 0 ) {
-						c = 0;
-					}
-					if ( js.value == 1 && c == 0 ) {
-						c = 1;
-						if ( joy_button[3] == 1 ) {
-							PauseFlag = 0;
-							printf ( "START\n" );
-						}
-						if ( joy_button[0] == 1 ) {
-							PauseFlag = 0;
-							EndFlag = 1;
-							printf ( "END\n" );
-						}
-					}
-					break;
-
-			}
-	
-		}
+			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+		}while( interval < 2000 );
 
 	}
 
 	fs.close();
-
-	led.setColor ( Colors :: Green );
 
 	return 0;
 
