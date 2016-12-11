@@ -106,8 +106,6 @@ void imuLoop ( void ) {
 	ay /= G_SI;
 	az /= G_SI;
 
-	az = - az;
-	gz = - gz;
 	my = - my;
 
 	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
