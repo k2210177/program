@@ -282,10 +282,10 @@ int main ( void ) {
 	float rroll , rpitch , ryaw;
 	float R , L , F , B;
 	float dR , dL , dF , dB;
-	float Ra = 3.7808 , Rb = - 3.8138;
-	float La = 3.5419 , Lb = - 3.2927;
-	float Fa = 3.5419 , Fb = - 3.3435;
-	float Ba = 4.0857 , Bb = - 4.2365;
+	float Ra = 3.7808 , Rb = - 4.3368;
+	float La = 3.5419 , Lb = - 4.0628;
+	float Fa = 3.5419 , Fb = - 4.0628;
+	float Ba = 4.0857 , Bb = - 4.6865;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
 	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
@@ -365,10 +365,10 @@ int main ( void ) {
 			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
 			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = min + dR + R * 1.000;
-			L = min + dL + L * 1.000;
-			F = min + dF + F * 1.000;
-			B = min + dB + B * 1.000;
+			R = dR + R * 1.000;
+			L = dL + L * 1.000;
+			F = dF + F * 1.000;
+			B = dB + B * 1.000;
 
 /*			//limitter
 			if ( R > max ) R = max;
@@ -390,7 +390,7 @@ int main ( void ) {
 			pwm.set_duty_cycle ( FRONT_MOTOR , min );
 			pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
-			printf ( "R=%f L=%f F=%f B=%f\n" ,R ,L ,F ,B );
+			printf ( "roll=%f pitch=%f yaw=%f cyaw=%f R=%f L=%f F=%f B=%f\n" ,roll ,pitch ,yaw ,cyaw ,R ,L ,F ,B );
 
 			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
