@@ -100,13 +100,13 @@ void imuLoop ( void ) {
 	imu -> update();
 	imu -> read_accelerometer( &ax , &ay , &az );
 	imu -> read_gyroscope( &gx , &gy , &gz );
-	imu -> read_magnetometer( &mx , &my , &mz );
+	//imu -> read_magnetometer( &mx , &my , &mz );
 
 	ax /= G_SI;
 	ay /= G_SI;
 	az /= G_SI;
 
-	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
+	ahrs.updateIMU( ax , ay , az , gx , gy , gz /*, mx , my , mz*/ , dt );
 
 	//Read Euler angles
 
