@@ -208,8 +208,6 @@ int main ( void ) {
 
 	//calibration
 
-	char c[3] = [ "x" , "y" , "z" ];
-	char d[4] = [ "east" , "west" , "north" , "south" ];
 	float m[3][4];
 	float cm[3];
 
@@ -223,7 +221,7 @@ int main ( void ) {
 
 		for ( int j = 0 ; j < 4 ; j++ ) {
 
-			printf ( "%c = %c Please push Enter\n" ,c[i] ,d[j] );
+			printf ( "m[%d][%d] Please push Enter , when you are ready\n" ,i ,j );
 			getchar();
 
 			for ( int k = 0 ; k < 1000 ; k++ ) {
