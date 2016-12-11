@@ -108,6 +108,7 @@ void imuLoop ( void ) {
 
 	az = - az;
 	gz = - gz;
+	my = - my;
 
 	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
