@@ -285,7 +285,7 @@ int main ( void ) {
 	float Ra = 3.7808 , Rb = - 4.3368;
 	float La = 3.5419 , Lb = - 4.0628;
 	float Fa = 3.5419 , Fb = - 4.0628;
-	float Ba = 4.0857 , Bb = - 4.6865;
+	float Ba = 3.7375 , Bb = - 3.7608;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
 	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
@@ -400,7 +400,7 @@ int main ( void ) {
 			pwm.set_duty_cycle ( FRONT_MOTOR , min );
 			pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
-			printf ( "roll=%f pitch=%f yaw=%f cyaw=%f R=%f L=%f F=%f B=%f\n" ,roll ,pitch ,yaw ,cyaw ,R ,L ,F ,B );
+			printf ( "roll=%f pitch=%f yaw=%f cyaw=%f R=%f L=%f F=%f B=%f throttle=%f\n" ,roll ,pitch ,yaw ,cyaw ,R ,L ,F ,B ,throttle );
 
 			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
