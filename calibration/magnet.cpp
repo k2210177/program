@@ -253,7 +253,7 @@ int main ( void ) {
 
 	//loging
 
-	printf ( "\n calibration is over.\nloging start\n" );
+	printf ( "\ncalibration is over.\nPush Enter to start loging start\n" );
 
 	while ( 1 ) {
 
@@ -267,8 +267,6 @@ int main ( void ) {
 		mx -= cm[0];
 		my -= cm[1];
 		mz -= cm[2];
-
-		printf ( "mx = %f , my = %f , mz = %f\n" ,mx ,my ,mz );
 
 		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,mx ,my ,mz );
 		fs << outstr << endl;
