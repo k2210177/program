@@ -187,15 +187,6 @@ int main ( void ) {
 
 	imuSetup();
 
-	for ( int i = 0 ; i < 10000 ; i++ ) {
-		imuLoop();
-		usleep( 1000 );
-		if( i % 1000 == 0 ) {
-			printf( "#" );
-			fflush( stdout );
-		}
-	}
-
 	printf ( "loging start\n" );
 
 	//flightlog setting
