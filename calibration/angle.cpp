@@ -98,15 +98,18 @@ void imuLoop ( void ) {
 	// Soft and hard iron calibration required for proper function.
 
 	imu -> update();
-	imu -> read_accelerometer( &ax , &ay , &az );
-	imu -> read_gyroscope( &gx , &gy , &gz );
-	//imu -> read_magnetometer( &mx , &my , &mz );
+	imu -> read_accelerometer( &ay , &ax , &az );
+	imu -> read_gyroscope( &gy , &gx , &gz );
+	imu -> read_magnetometer( &mx , &my , &mz );
 
 	ax /= G_SI;
 	ay /= G_SI;
 	az /= G_SI;
 
-	ahrs.updateIMU( ax , ay , az , gx , gy , gz /*, mx , my , mz*/ , dt );
+	az = - az;
+	gz = - gz;
+
+	ahrs.updateIMU( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
 	//Read Euler angles
 
@@ -218,18 +221,6 @@ int main ( void ) {
 		interval  = now_time - past_time;
 
 		imuLoop ();
-
-		yaw = -yaw;
-
-		ad =   ax;
-		ax =   ay;
-		ay =   ad;
-		az = - az;
-
-		gd =   gx;
-		gx =   gy;
-		gy =   gd;
-		gz = - gz;
 
 		phi = phi + ( dgx + gx ) * dt / 2.0;
 		th  = th  + ( dgy + gy ) * dt / 2.0;
