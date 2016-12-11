@@ -220,7 +220,7 @@ int main()
 	printf("\nReady to Fly !\n");
 
 	////// Log system setting
-	char filename[] = "motortest.txt";
+	char filename[] = "motor-vivration.txt";
 	char outstr[255];
 	std::ofstream fs(filename);
 

@@ -345,15 +345,25 @@ int main ( void ) {
 			if ( SLy >  1.0 ) SLy =  1.0;
 			if ( SLy < -1.0 ) SLy = -1.0;
 
-			throttle = SRy;
+			throttle = SRy * 7.0 / 4.0;
 /*			rroll    = SLx;
 			rpitch   = SLy;
 			ryaw     = SRx;
 */
-			dR = ( SRy - Rb ) / Ra;
-			dL = ( SRy - Lb ) / La;
-			dF = ( SRy - Fb ) / Fa;
-			dB = ( SRy - Bb ) / Ba;
+			dR = ( throttle - Rb ) / Ra;
+			dL = ( throttle - Lb ) / La;
+			dF = ( throttle - Fb ) / Fa;
+			dB = ( throttle - Bb ) / Ba;
+
+			//limitter
+			if ( dR > max ) dR = max;
+			if ( dR < min ) dR = min;
+			if ( dL > max ) dL = max;
+			if ( dL < min ) dL = min;
+			if ( dF > max ) dF = max;
+			if ( dF < min ) dF = min;
+			if ( dB > max ) dB = max;
+			if ( dB < min ) dB = min;
 
 			imuLoop ();
 
@@ -370,7 +380,7 @@ int main ( void ) {
 			F = dF + F * 1.000;
 			B = dB + B * 1.000;
 
-/*			//limitter
+			//limitter
 			if ( R > max ) R = max;
 			if ( R < min ) R = min;
 			if ( L > max ) L = max;
@@ -379,7 +389,7 @@ int main ( void ) {
 			if ( F < min ) F = min;
 			if ( B > max ) B = max;
 			if ( B < min ) B = min;
-*/
+
 /*			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
 			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
