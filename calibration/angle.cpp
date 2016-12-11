@@ -1,5 +1,5 @@
-// 12月10日 作成
-// 角度較正プログラム
+// 12月8日 作成
+// メインプログラム
 
 #include <iostream>
 #include <iomanip>
@@ -14,14 +14,25 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <linux/joystick.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "../../Navio2/C++/Navio/MPU9250.h"
-#include "../../Navio2/C++/Navio/LSM9DS1.h"
-#include "../AHRS.hpp"
+#include "../Navio2/C++/Navio/MPU9250.h"
+#include "../Navio2/C++/Navio/LSM9DS1.h"
+#include "../Navio2/C++/Navio/PWM.h"
+#include "../Navio2/C++/Navio/RGBled.h"
+#include "../Navio2/C++/Navio/Util.h"
+#include "AHRS.hpp"
 
+#define RIGHT_MOTOR 0
+#define LEFT_MOTOR 1
+#define FRONT_MOTOR 2
+#define REAR_MOTOR 3
+#define SERVO_MIN 1.0 /*ms*/
+#define SERVO_MAX 2.0 /*ms*/
 #define G_SI 9.80665
 #define PI   3.14159
+#define JOY_DEV "/dev/input/js0"
 
 using namespace std;
 
@@ -32,8 +43,8 @@ AHRS    ahrs;   // Mahony AHRS
 
 // Sensor data
 
-float ax , ay , az , ad;
-float gx , gy , gz , gd;
+float ax , ay , az;
+float gx , gy , gz;
 float mx , my , mz;
 
 // Orientation data
@@ -138,11 +149,6 @@ void imuLoop ( void ) {
 
 	}
 
-	gd =   gx;
-	gx =   gy;
-	gy =   gd;
-	gz = - gz;
-
 }
 
 InertialSensor* create_inertial_sensor ( char *sensor_name ) {
@@ -173,6 +179,31 @@ InertialSensor* create_inertial_sensor ( char *sensor_name ) {
 
 int main ( void ) {
 
+	//DualShock3 setting
+
+	int joy_fd( -1 ) , num_of_axis( 0 ) , num_of_buttons( 0 );
+	char name_of_joystick[80];
+	vector<char> joy_button;
+	vector<int> joy_axis;
+	js_event js;
+
+	if ( ( joy_fd = open( JOY_DEV ,O_RDONLY ) ) < 0 ) {
+		printf( "Failed to open %s" ,JOY_DEV );
+		cerr << "Failed to open " << JOY_DEV << endl;
+		return -1;
+	}
+
+	ioctl( joy_fd , JSIOCGAXES , &num_of_axis );
+	ioctl( joy_fd , JSIOCGBUTTONS , &num_of_buttons );
+	ioctl( joy_fd , JSIOCGNAME(80) , &name_of_joystick );
+
+	joy_button.resize( num_of_buttons , 0 );
+	joy_axis.resize( num_of_axis , 0 );
+
+	printf( "Joystick: %s axis: %d buttons: %d\n" ,name_of_joystick ,num_of_axis ,num_of_buttons );
+
+	fcntl( joy_fd, F_SETFL, O_NONBLOCK );
+
 	//IMU setting
 
 	char sensor_name[] = "mpu";
@@ -191,8 +222,36 @@ int main ( void ) {
 
 	imuSetup();
 
+	PWM pwm;
+	RGBled led;
+
+	if( !led.initialize() ) return EXIT_FAILURE;
+
+	if ( check_apm() ) {
+		return 1;
+	}
+
+	for ( int i = 0 ; i < 10000 ; i++ ) {
+		imuLoop();
+		usleep( 1000 );
+		if( i % 1000 == 0 ) {
+			printf( "#" );
+			fflush( stdout );
+		}
+	}
+
+	for ( int i = 0 ; i < 4 ; i++ ) {
+		if ( !pwm.init( i ) ) {
+			fprintf( stderr , "Output Enable not set. Are you root?\n" );
+			return 0;
+		}
+		pwm.enable( i );
+		pwm.set_period( i , 500 );
+	}
+	printf( "\nReady to Fly !\n" );
+
 	//flightlog setting
-	char filename[] = "angle.txt";
+	char filename[] = "flightlog.txt";
 	char outstr[255];
 	std::ofstream fs(filename);
 
@@ -207,126 +266,157 @@ int main ( void ) {
 
 	//main loop
 
-	float dgx , dgy , dgz;
-	float Kroll = 0.0 , Kpitch = 0.0 , Kyaw = 0.0;
+	short c = 0 , PauseFlag = 1 , EndFlag = 0;
+	float ad , gd , dgx = 0.0 , dgy = 0.0 , dgz = 0.0;
+	float phi = 0.0 , th = 0.0 , psi = 0.0;
+	float min = 1.0 , max = 2.0;
+	float R , L , F , B;
+	float dt = 2000 * 0.000001;
 
-	printf ( "roll calibration\nPlease push the Enter when you are ready" );
-	getchar();
+	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
+	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
+	pwm.set_duty_cycle ( FRONT_MOTOR , min );
+	pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
-	imuLoop ();
+	while ( EndFlag == 0 ) {
 
-	dgx = gx;
+		led.setColor ( Colors :: Red );
 
-	for ( int i = 0 ; i < 5000 ; i++ ) {
+		while ( PauseFlag == 0 ) {
 
-		gettimeofday ( &tval , NULL );
-		past_time = now_time;
-		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
-		interval  = now_time - past_time;
-
-		imuLoop ();
-
-		do{
 			gettimeofday ( &tval , NULL );
-			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
-		}while( interval < 2000 );
+			past_time = now_time;
+			now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
+			interval  = now_time - past_time;
 
-		Kroll += ( dgx + gx ) / 2.0 * interval;
+			read ( joy_fd , &js , sizeof ( js_event ) );
 
-		dgx = gx;
+			switch ( js.type & ~JS_EVENT_INIT ) {
 
-	}
+				case JS_EVENT_AXIS:
+					joy_axis[( int )js.number] = js.value;
+					break;
 
-	Kroll = PI / 2.0 / roll;
+				case JS_EVENT_BUTTON:
+					joy_button[( int )js.number] = js.value;
+					if ( js.value == 0 ) {
+						c = 0;
+					}
+					if ( js.value == 1 && c == 0 ) {
+						c = 1;
+						if ( joy_button[3] == 1 ) {
+							PauseFlag = 1;
+							printf ( "PAUSE\n" );
+						}
+					}
+					break;
 
-	printf ( "pitch calibration\nPlease push the Enter when you are ready" );
-	getchar();
+			}
 
-	imuLoop ();
+			imuLoop ();
 
-	dgy = gy;
+			yaw = -yaw;
 
-	for ( int i = 0 ; i < 5000 ; i++ ) {
+			ad =   ax;
+			ax =   ay;
+			ay =   ad;
+			az = - az;
 
-		gettimeofday ( &tval , NULL );
-		past_time = now_time;
-		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
-		interval  = now_time - past_time;
+			gd =   gx;
+			gx =   gy;
+			gy =   gd;
+			gz = - gz;
 
-		do{
-			gettimeofday ( &tval , NULL );
-			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
-		}while( interval < 2000 );
+			phi = phi + ( dgx + gx ) * dt / 2.0;
+			th  = th  + ( dgy + gy ) * dt / 2.0;
+			psi = psi + ( dgz + gz ) * dt / 2.0;
 
-		imuLoop ();
+			//regulator
+			R =   0.858 * gy * 0.001 + 0.011 * gx * 0.001 - 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
+			L = - 0.696 * gy * 0.001 + 0.013 * gx * 0.001 - 2.414 * gz * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
+			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
+			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-		Kpitch = ( dgy + gy ) / 2.0 * interval;
+			R = min + R * 1.000;
+			L = min + L * 1.000;
+			F = min + F * 1.000;
+			B = min + B * 1.000;
 
-		dgy = gy;
+			//limitter
+			if ( R > max ) R = max;
+			if ( R < min ) R = min;
+			if ( L > max ) L = max;
+			if ( L < min ) L = min;
+			if ( F > max ) F = max;
+			if ( F < min ) F = min;
+			if ( B > max ) B = max;
+			if ( B < min ) B = min;
 
-	}
+			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
+			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
+			pwm.set_duty_cycle ( FRONT_MOTOR , F );
+			pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-	Kpitch = PI / 2.0 / pitch;
+			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
+					,now_time ,interval
+					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
+					,roll ,pitch ,yaw ,phi ,th ,psi
+					,R ,L ,F ,B
+			       );
+			fs << outstr << endl;
 
-	printf ( "yaw calibration\nPlease push the Enter when you are ready" );
-	getchar();
+			do{
+				gettimeofday ( &tval , NULL );
+				interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
+			}while( interval < 2000 );
 
-	imuLoop ();
+		}
 
-	dgz = gz;
+		pwm.set_duty_cycle ( RIGHT_MOTOR , min );
+		pwm.set_duty_cycle ( LEFT_MOTOR  , min );
+		pwm.set_duty_cycle ( FRONT_MOTOR , min );
+		pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
-	for ( int i = 0 ; i < 5000 ; i++ ) {
+		led.setColor ( Colors :: Blue );
 
-		gettimeofday ( &tval , NULL );
-		past_time = now_time;
-		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
-		interval  = now_time - past_time;
+		while ( PauseFlag == 1 ) {
 
-		do{
-			gettimeofday ( &tval , NULL );
-			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
-		}while( interval < 2000 );
+			read ( joy_fd , &js , sizeof ( js_event ) );
 
-		imuLoop ();
+			switch ( js.type & ~JS_EVENT_INIT ) {
 
-		Kyaw = ( dgz + gz ) / 2.0 * interval;
+				case JS_EVENT_AXIS:
+					joy_axis[( int )js.number] = js.value;
+					break;
 
-		dgz = gz;
+				case JS_EVENT_BUTTON:
+					joy_button[( int )js.number] = js.value;
+					if ( js.value == 0 ) {
+						c = 0;
+					}
+					if ( js.value == 1 && c == 0 ) {
+						c = 1;
+						if ( joy_button[3] == 1 ) {
+							PauseFlag = 0;
+							printf ( "START\n" );
+						}
+						if ( joy_button[0] == 1 ) {
+							PauseFlag = 0;
+							EndFlag = 1;
+							printf ( "END\n" );
+						}
+					}
+					break;
 
-	}
-
-	Kyaw = PI / 2.0 / yaw;
-
-	printf ( "Kroll = %f , Kpitch = %f , Kyaw = %f\n" ,Kroll ,Kpitch ,Kyaw );
-
-	sleep(3);
-
-	printf ( "loging start\n" ); 
-
-	while (1) {
-
-		gettimeofday ( &tval , NULL );
-		past_time = now_time;
-		now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
-		interval  = now_time - past_time;
-
-		imuLoop ();
-
-		roll  *= Kroll;
-		pitch *= Kpitch;
-		yaw   *= Kyaw;
-
-		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,roll ,pitch ,yaw );
-		fs << outstr << endl;
-
-		do{
-			gettimeofday ( &tval , NULL );
-			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
-		}while( interval < 2000 );
+			}
+	
+		}
 
 	}
 
 	fs.close();
+
+	led.setColor ( Colors :: Green );
 
 	return 0;
 
