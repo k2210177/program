@@ -1,0 +1,91 @@
+imuloop.cppを作成し、センサの軸方向の確認を行った。
+
+結果、以下の変換が必要であることが判明した。
+
+加速度センサ
+	ax = - ax
+	ay = - ay
+	az =   az
+
+ジャイロセンサ
+	gx =   gy
+	gy =   gx
+	gz = - gz
+
+地磁気センサ（変換不要、ただし要較正）
+	mx =   mx
+	my =   my
+	mz =   mz
+
+オイラー角（yawは地磁気センサの較正により直る（？））
+	roll  = pitch
+	pitch = roll
+	yaw   = yaw
+
+これら（地磁気センサの較正を除く）をimuLoop関数に反映させると以下のようになる。
+
+void imuLoop ( void ) {
+
+	//Calculate delta time
+
+	gettimeofday( &tv , NULL );
+	previoustime = currenttime;
+	currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
+	dt = ( currenttime - previoustime ) / 1000000.0;
+	if( dt < 1/1300.0 )  usleep( ( 1/1300.0 - dt ) * 1000000);
+	gettimeofday( &tv , NULL) ;
+	currenttime = 1000000 * tv.tv_sec + tv.tv_usec;
+	dt = ( currenttime - previoustime ) / 1000000.0;
+
+	//Read raw measurements from the MPU and update AHRS
+	// Accel + gyro + mag.
+	// Soft and hard iron calibration required for proper function.
+
+	imu -> update();
+	imu -> read_accelerometer( &ay , &ax , &az );
+	imu -> read_gyroscope( &gy , &gx , &gz );
+	imu -> read_magnetometer( &mx , &my , &mz );
+
+	ax /= G_SI;
+	ay /= G_SI;
+	az /= G_SI;
+
+	ax = - ax;
+	ay = - ay;
+
+	gz = - gz;
+
+	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
+
+	//Read Euler angles
+
+	ahrs.getEuler( &roll , &pitch , &yaw );
+
+	//Discard the time of the first cycle
+
+	if ( !isFirst )	{
+
+		if ( dt > maxdt ) maxdt = dt;
+		if ( dt < mindt ) mindt = dt;
+
+	}
+	isFirst = 0;
+
+	//Console and network output with a lowered rate
+
+	dtsumm += dt;
+
+	if( dtsumm > 0.05 ) {
+
+		//Console output
+		//printf("ROLL: %+05.2f PITCH: %+05.2f YAW: %+05.2f PERIOD %.4fs RATE %dHz \n", roll, pitch, gz/*yaw * -1*/, dt, int(1/dt));
+
+		// Network output
+		//sprintf( sendline , "%10f %10f %10f %10f %dHz\n" ,ahrs.getW() ,ahrs.getX() ,ahrs.getY() ,ahrs.getZ() ,int( 1/dt ) );
+		//sendto( sockfd , sendline , strlen( sendline ) , 0 ,  ( struct sockaddr * )&servaddr , sizeof( servaddr ) );
+
+		dtsumm = 0;
+
+	}
+
+}

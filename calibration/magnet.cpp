@@ -1,5 +1,5 @@
 // 12月11日 作成
-// センサ情報確認プログラム
+// 地磁気センサ較正プログラム
 
 #include <iostream>
 #include <iomanip>
@@ -193,7 +193,7 @@ int main ( void ) {
 	imuSetup();
 
 	//flightlog setting
-	char filename[] = "imuloop.txt";
+	char filename[] = "magnet.txt";
 	char outstr[255];
 	std::ofstream fs(filename);
 
@@ -206,7 +206,49 @@ int main ( void ) {
 	past_time = now_time;
 	interval  = now_time - past_time;
 
-	//main loop
+	//calibration
+
+	char c[3] = [ "x" , "y" , "z" ];
+	char d[4] = [ "east" , "west" , "north" , "south" ];
+	float m[3][4];
+	float cm[3];
+
+	for ( int i = 0 ; i < 3 ; i++ ) {
+		for ( int j = 0 ; j < 4 ; j++ ) {
+			m[i][j] = 0;
+		}
+	}
+
+	for ( int i = 0 ; i < 3 ; i++ ) {
+
+		for ( int j = 0 ; j < 4 ; j++ ) {
+
+			printf ( "%c = %c Please push Enter\n" ,c[i] ,d[j] );
+			getchar();
+
+			for ( int k = 0 ; k < 1000 ; k++ ) {
+
+				imuLoop();
+
+				if ( i == 0 ) m[i][j] += mx / 1000;
+				if ( i == 1 ) m[i][j] += my / 1000;
+				if ( i == 2 ) m[i][j] += mz / 1000;
+
+			}
+
+		}
+
+		cm[i] = ( m[i][0] + m[i][1] ) / 2.0;
+
+		printf ( "cm[%c] = %f" ,c[i] ,cm[i] );
+
+	}
+
+	sleep(3);
+
+	//loging
+
+	printf ( "\n calibration is over.\nloging start\n" );
 
 	while ( 1 ) {
 
@@ -217,20 +259,19 @@ int main ( void ) {
 
 		imuLoop ();
 
-		printf ( "ax=%3f ay=%3f az=%3f gx=%3f gy=%3f gz=%3f mx=%3f my=%3f mz=%3f roll=%3f pitch=%3f yaw=%3f\n"
-			,ax ,ay ,az ,gx ,gy ,gz ,mx ,my ,mz ,roll ,pitch ,yaw );
+		mx -= cm[0];
+		my -= cm[1];
+		mz -= cm[2];
 
-		sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f"
-				,now_time ,interval
-				,ax ,ay ,az ,gx ,gy ,gz ,mx ,my ,mz
-				,roll ,pitch ,yaw
-		       );
+		printf ( "mx = %f , my = %f , mz = %f\n" ,mx ,my ,mz );
+
+		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,mx ,my ,mz );
 		fs << outstr << endl;
 
 		do{
 			gettimeofday ( &tval , NULL );
 			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
-		}while( interval < 200000 );
+		}while( interval < 2000 );
 
 	}
 

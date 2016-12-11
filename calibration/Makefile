@@ -3,7 +3,7 @@ NAVIO = ../../Navio2/C++/Navio
 INCLUDES = -I ../..
 
 all:
-	$(CXX) -std=gnu++11 $(INCLUDES) imuloop.cpp $(NAVIO)/MPU9250.cpp $(NAVIO)/LSM9DS1.cpp $(NAVIO)/gpio.cpp -o imuloop
+	$(CXX) -std=gnu++11 $(INCLUDES) magnet.cpp $(NAVIO)/MPU9250.cpp $(NAVIO)/LSM9DS1.cpp $(NAVIO)/gpio.cpp -o magnet
 
 clean:
-	rm imuloop
+	rm magnet

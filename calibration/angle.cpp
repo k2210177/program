@@ -1,5 +1,5 @@
-// 12月8日 作成
-// メインプログラム
+// 12月10日 作成
+// 角度情報較正プログラム
 
 #include <iostream>
 #include <iomanip>
