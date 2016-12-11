@@ -187,10 +187,6 @@ int main ( void ) {
 
 	imuSetup();
 
-	if ( check_apm() ) {
-		return 1;
-	}
-
 	for ( int i = 0 ; i < 10000 ; i++ ) {
 		imuLoop();
 		usleep( 1000 );
