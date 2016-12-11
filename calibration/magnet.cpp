@@ -192,8 +192,12 @@ int main ( void ) {
 
 	imuSetup();
 
-	//flightlog setting
+	//log setting
 	char filename[] = "magnet.txt";
+	char outstr[255];
+	std::ofstream fs(filename);
+
+	char filename[] = "cmagnet.txt";
 	char outstr[255];
 	std::ofstream fs(filename);
 
@@ -241,6 +245,9 @@ int main ( void ) {
 		printf ( "cm[i] = %f\n" ,i ,cm[i] );
 
 	}
+
+	sprintf( outstr , "cmx = %f , cmy = %f , cmz = %f" ,cm[0] ,cm[1] ,cm[2] );
+	fs << outstr << endl;
 
 	sleep(3);
 
