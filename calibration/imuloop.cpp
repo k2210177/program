@@ -1,5 +1,5 @@
-// 12月8日 作成
-// メインプログラム
+// 12月11日 作成
+// センサ情報確認プログラム
 
 #include <iostream>
 #include <iomanip>
@@ -17,9 +17,9 @@
 #include <linux/joystick.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "../Navio2/C++/Navio/MPU9250.h"
-#include "../Navio2/C++/Navio/LSM9DS1.h"
-#include "AHRS.hpp"
+#include "../../Navio2/C++/Navio/MPU9250.h"
+#include "../../Navio2/C++/Navio/LSM9DS1.h"
+#include "../AHRS.hpp"
 
 #define G_SI 9.80665
 #define PI   3.14159
@@ -98,19 +98,24 @@ void imuLoop ( void ) {
 	// Soft and hard iron calibration required for proper function.
 
 	imu -> update();
-	imu -> read_accelerometer( &ax , &ay , &az );
-	imu -> read_gyroscope( &gx , &gy , &gz );
+	imu -> read_accelerometer( &ay , &ax , &az );
+	imu -> read_gyroscope( &gy , &gx , &gz );
 	imu -> read_magnetometer( &mx , &my , &mz );
 
 	ax /= G_SI;
 	ay /= G_SI;
 	az /= G_SI;
 
+	ax = - ax;
+	ay = - ay;
+
+	gz = - gz;
+
 	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
 	//Read Euler angles
 
-	ahrs.getEuler( &pitch , &roll , &yaw );
+	ahrs.getEuler( &roll , &pitch , &yaw );
 
 	//Discard the time of the first cycle
 
@@ -212,7 +217,7 @@ int main ( void ) {
 
 		imuLoop ();
 
-		printf ( "ax=%5f ay=%5f az=%5f gx=%5f gy=%5f gz=%5f mx=%5f my=%5f roll=%5f pitch=%5f yaw=%5f\n"
+		printf ( "ax=%3f ay=%3f az=%3f gx=%3f gy=%3f gz=%3f mx=%3f my=%3f mz=%3f roll=%3f pitch=%3f yaw=%3f\n"
 			,ax ,ay ,az ,gx ,gy ,gz ,mx ,my ,mz ,roll ,pitch ,yaw );
 
 		sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f"
@@ -225,7 +230,7 @@ int main ( void ) {
 		do{
 			gettimeofday ( &tval , NULL );
 			interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
-		}while( interval < 10000 );
+		}while( interval < 200000 );
 
 	}
 
