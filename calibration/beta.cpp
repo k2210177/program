@@ -45,6 +45,7 @@ float ax , ay , az;
 float gx , gy , gz;
 float mx , my , mz;
 
+float cax = - 1.003202 , cay = - 1.006379 , caz = - 0.977109;
 float cmx = 73.389450 , cmy = 0.753407 , cmz = 7.400240;
 
 // Orientation data
@@ -119,6 +120,10 @@ void imuLoop ( void ) {
 	ax = - ax;
 	ay = - ay;
 	gz = - gz;
+
+	ax *= cax;
+	ay *= cay;
+	az *= caz;
 
 	mx -= cmx;
 	my -= cmy;
@@ -282,10 +287,10 @@ int main ( void ) {
 	float rroll , rpitch , ryaw;
 	float R , L , F , B;
 	float dR , dL , dF , dB;
-	float Ra = 4.09514 , Rb = - 4.94945;
-	float La = 3.29822 , Lb = - 3.64960;
-	float Fa = 3.30581 , Fb = - 3.61800;
-	float Ba = 3.70403 , Bb = - 4.44915;
+	float Ra = 4.0857 , Rb = - 4.6865382;
+	float La = 3.5419 , Lb = - 4.0627676;
+	float Fa = 3.5419 , Fb = - 4.0627676;
+	float Ba = 3.7375 , Bb = - 3.7608000;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
 	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
@@ -404,7 +409,7 @@ int main ( void ) {
 
 			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
-					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
+					,ax ,ay ,az ,gx ,gy ,gz ,mx ,my ,mz
 					,roll ,pitch ,yaw
 					,R ,L ,F ,B
 			       );
