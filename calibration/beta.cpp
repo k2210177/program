@@ -119,6 +119,7 @@ void imuLoop ( void ) {
 
 	ax = - ax;
 	ay = - ay;
+
 	gz = - gz;
 
 	ax *= cax;
