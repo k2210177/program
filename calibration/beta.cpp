@@ -126,6 +126,10 @@ void imuLoop ( void ) {
 	my -= cmy;
 	mz -= cmz;
 
+	gx *= PI / 180.0;
+	gy *= PI / 180.0;
+	gz *= PI / 180.0;
+
 	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
 	//Read Euler angles
@@ -402,7 +406,7 @@ int main ( void ) {
 			pwm.set_duty_cycle ( FRONT_MOTOR , min );
 			pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
-			printf ( "roll=%f pitch=%f yaw=%f cyaw=%f R=%f L=%f F=%f B=%f throttle=%f\n" ,roll ,pitch ,yaw ,cyaw ,R ,L ,F ,B ,throttle );
+			printf ( "roll=%f pitch=%f yaw=%f cyaw=%f gx=%f gy=%f gz=%f\n" ,roll ,pitch ,yaw ,cyaw ,gx ,gy ,gz );
 
 			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
