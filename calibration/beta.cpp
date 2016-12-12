@@ -45,7 +45,7 @@ float ax , ay , az;
 float gx , gy , gz;
 float mx , my , mz;
 
-float cax = - 1.003202 , cay = - 1.006379 , caz = - 0.977109;
+float cax =  1.003202 , cay = 1.006379 , caz = 0.977109;
 float cmx = 73.389450 , cmy = 0.753407 , cmz = 7.400240;
 
 // Orientation data
@@ -121,10 +121,6 @@ void imuLoop ( void ) {
 	ay = - ay;
 
 	gz = - gz;
-
-	ax *= cax;
-	ay *= cay;
-	az *= caz;
 
 	mx -= cmx;
 	my -= cmy;
