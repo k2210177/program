@@ -392,15 +392,10 @@ int main ( void ) {
 			if ( B > max ) B = max;
 			if ( B < min ) B = min;
 
-/*			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
+			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
 			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
 			pwm.set_duty_cycle ( REAR_MOTOR  , B );
-*/
-			pwm.set_duty_cycle ( RIGHT_MOTOR , min );
-			pwm.set_duty_cycle ( LEFT_MOTOR  , min );
-			pwm.set_duty_cycle ( FRONT_MOTOR , min );
-			pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
 			printf ( "roll=%f pitch=%f yaw=%f cyaw=%f R=%f L=%f F=%f B=%f throttle=%f\n" ,roll ,pitch ,yaw ,cyaw ,R ,L ,F ,B ,throttle );
 
