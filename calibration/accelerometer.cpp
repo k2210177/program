@@ -97,13 +97,17 @@ void imuLoop ( void ) {
 	// Soft and hard iron calibration required for proper function.
 
 	imu -> update();
-	imu -> read_accelerometer( &ax , &ay , &az );
-	imu -> read_gyroscope( &gx , &gy , &gz );
+	imu -> read_accelerometer( &ay , &ax , &az );
+	imu -> read_gyroscope( &gy , &gx , &gz );
 	imu -> read_magnetometer( &mx , &my , &mz );
 
 	ax /= G_SI;
 	ay /= G_SI;
 	az /= G_SI;
+
+	ax = - ax;
+	ay = - ay;
+	gz = - gz;
 
 	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
