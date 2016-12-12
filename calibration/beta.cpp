@@ -282,10 +282,10 @@ int main ( void ) {
 	float rroll , rpitch , ryaw;
 	float R , L , F , B;
 	float dR , dL , dF , dB;
-	float Ra = 3.7808 , Rb = - 4.3368;
-	float La = 3.5419 , Lb = - 4.0628;
-	float Fa = 3.5419 , Fb = - 4.0628;
-	float Ba = 3.7375 , Bb = - 3.7608;
+	float Ra = 4.09514 , Rb = - 4.94945;
+	float La = 3.29822 , Lb = - 3.64960;
+	float Fa = 3.30581 , Fb = - 3.61800;
+	float Ba = 3.70403 , Bb = - 4.44915;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
 	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
