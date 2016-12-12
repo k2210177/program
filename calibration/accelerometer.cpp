@@ -206,8 +206,7 @@ int main ( void ) {
 
 	//main loop
 
-	float ad;
-	float Kx = 0.0 , Ky = 0.0 , Kz = 0.0;
+	float cax = 0.0 , cay = 0.0 , caz = 0.0;
 
 	printf ( "ax calibration\nPlease push the Enter when you are ready" );
 	getchar();
@@ -221,12 +220,7 @@ int main ( void ) {
 
 		imuLoop ();
 
-		ad =   ax;
-		ax =   ay;
-		ay =   ad;
-		az = - az;
-
-		Kx += 1.0 / ax / 1000;
+		cax += 1.0 / ax / 1000;
 
 		do{
 			gettimeofday ( &tval , NULL );
@@ -247,12 +241,7 @@ int main ( void ) {
 
 		imuLoop ();
 
-		ad =   ax;
-		ax =   ay;
-		ay =   ad;
-		az = - az;
-
-		Ky += 1.0 / ay / 1000;
+		cay += 1.0 / ay / 1000;
 
 		do{
 			gettimeofday ( &tval , NULL );
@@ -273,12 +262,7 @@ int main ( void ) {
 
 		imuLoop ();
 
-		ad =   ax;
-		ax =   ay;
-		ay =   ad;
-		az = - az;
-
-		Kz += 1.0 / az / 1000;
+		caz += 1.0 / az / 1000;
 
 		do{
 			gettimeofday ( &tval , NULL );
@@ -287,7 +271,7 @@ int main ( void ) {
 
 	}
 
-	printf ( "Kx = %f , Ky = %f , Kz = %f\n" ,Kx ,Ky ,Kz );
+	printf ( "cax = %f , cay = %f , caz = %f\n" ,cax ,cay ,caz );
 
 	sleep(3);
 
@@ -302,14 +286,9 @@ int main ( void ) {
 
 		imuLoop ();
 
-		ad =   ax;
-		ax =   ay;
-		ay =   ad;
-		az = - az;
-
-		ax *= Kx;
-		ay *= Ky;
-		az *= Kz;
+		ax *= cax;
+		ay *= cay;
+		az *= caz;
 
 		sprintf( outstr , "%lu %lu %f %f %f" ,now_time ,interval ,ax ,ay ,az );
 		fs << outstr << endl;
