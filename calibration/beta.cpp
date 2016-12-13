@@ -117,9 +117,9 @@ void imuLoop ( void ) {
 	ay /= G_SI;
 	az /= G_SI;
 
-	//mx -= cmx;
-	//my -= cmy;
-	//mz -= cmz;
+	mx -= cmx;
+	my -= cmy;
+	mz -= cmz;
 /*
 	//ax =  -ax;
 	//ay =  -ay;
