@@ -46,7 +46,7 @@ float gx , gy , gz;
 float mx , my , mz;
 
 float cax =  1.003202 , cay = 1.006379 , caz = 0.977109;
-float cmx = 73.389450 , cmy = 0.753407 , cmz = 7.400240;
+float cmx = 73.407806 , cmy = 1.275177/* , cmz = 8.472217*/;
 
 // Orientation data
 
