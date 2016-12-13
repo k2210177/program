@@ -109,28 +109,31 @@ void imuLoop ( void ) {
 	// Soft and hard iron calibration required for proper function.
 
 	imu -> update();
-	imu -> read_accelerometer( &ay , &ax , &az );
-	imu -> read_gyroscope( &gy , &gx , &gz );
+	imu -> read_accelerometer( &ax , &ay , &az );
+	imu -> read_gyroscope( &gx , &gy , &gz );
 	imu -> read_magnetometer( &mx , &my , &mz );
 
 	ax /= G_SI;
 	ay /= G_SI;
 	az /= G_SI;
 
-	ax = - ax;
-	ay = - ay;
-
+	//mx -= cmx;
+	//my -= cmy;
+	//mz -= cmz;
+/*
+	//ax =  -ax;
+	//ay =  -ay;
+	az = -az;
 	gz = - gz;
 
-	mx -= cmx;
-	my -= cmy;
-	mz -= cmz;
 
-	gx *= PI / 180.0;
-	gy *= PI / 180.0;
-	gz *= PI / 180.0;
+	//gx *= PI / 180.0;
+	//gy *= PI / 180.0;
+	//gz *= PI / 180.0;
+*/
 
-	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
+	ahrs.update( ax , ay , az , gx , gy , gz , my , mx ,- mz , dt );
+	//ahrs.updateIMU( ax , ay , az , gx , gy , gz, dt);
 
 	//Read Euler angles
 
@@ -245,7 +248,7 @@ int main ( void ) {
 		return 1;
 	}
 
-	for ( int i = 0 ; i < 10000 ; i++ ) {
+	for ( int i = 0 ; i < 5000 ; i++ ) {
 		imuLoop();
 		usleep( 1000 );
 		if( i % 1000 == 0 ) {
@@ -304,6 +307,8 @@ int main ( void ) {
 
 		imuLoop();
 
+
+
 		cyaw = yaw;
 
 		while ( PauseFlag == 0 ) {
@@ -337,6 +342,7 @@ int main ( void ) {
 
 			}
 
+
 			SRx =  joy_axis[2] / 23170.0;
 			SRy = -joy_axis[3] / 23170.0;
 			SLx =  joy_axis[0] / 23170.0;
@@ -351,7 +357,8 @@ int main ( void ) {
 			if ( SLy >  1.0 ) SLy =  1.0;
 			if ( SLy < -1.0 ) SLy = -1.0;
 
-			throttle = SRy * 7.0 / 4.0;
+			throttle = 2.0*2.0*SRy * 7.0 / 4.0;
+
 /*			rroll    = SLx;
 			rpitch   = SLy;
 			ryaw     = SRx;
@@ -375,16 +382,41 @@ int main ( void ) {
 
 			yaw -= cyaw;
 
-			//regulator
-			R =   0.8628886 * gy * 0.001 + 0.0042907 * gx * 0.001 - 0.7707670 * gz * 0.001 + 7.8315342 * roll + 0.0059907 * pitch - 0.5017307 * yaw;
-			L = - 0.6905217 * gy * 0.001 + 0.0054213 * gx * 0.001 - 0.9708275 * gz * 0.001 - 6.2182832 * roll + 0.0075532 * pitch - 0.6314131 * yaw;
-			F =   0.0027362 * gy * 0.001 - 0.7430635 * gx * 0.001 + 0.6788208 * gz * 0.001 + 0.0038083 * roll - 6.6448231 * pitch + 0.4413308 * yaw;
-			B =   0.0024225 * gy * 0.001 + 0.8292352 * gx * 0.001 + 0.6042195 * gz * 0.001 + 0.0033931 * roll + 7.4730337 * pitch + 0.3934600 * yaw;
+			float phi = pitch;
+			float theta = roll;
+			float psi = yaw;
+			float prate = gy;
+			float qrate = gx;
+			float rrate = gz;
+			
+			//if (phi<0.0) phi = phi + PI;
+			//else phi =phi - PI;
 
-			R = dR + R * 1.000;
-			L = dL + L * 1.000;
-			F = dF + F * 1.000;
-			B = dB + B * 1.000;
+
+
+			if(roll>=0.0)roll = roll - PI;
+			else roll = roll + PI;
+			
+			//regulator
+			float K[4][6]={
+				{  0.790743,   0.002037,  -0.365381,   0.782950,   0.000882,  -0.158761},
+				{ -0.629973,   0.002567,  -0.460184,  -0.622084,   0.001110,  -0.199591},
+				{  0.001294,  -0.673661,   0.321759,   0.000560,  -0.664731,   0.139443},
+				{  0.001151,   0.755087,   0.286439,   0.000499,   0.747082,   0.124556}
+			};
+
+   			R =   K[0][0] * prate  + K[0][1] * qrate + K[0][2] * rrate + K[0][3] * phi + K[0][4] * theta + K[0][5] * psi; 
+  			L =   K[1][0] * prate  + K[1][1] * qrate + K[1][2] * rrate + K[1][3] * phi + K[1][4] * theta + K[1][5] * psi; 
+   			F =   K[2][0] * prate  + K[2][1] * qrate + K[2][2] * rrate + K[2][3] * phi + K[2][4] * theta + K[2][5] * psi; 
+   			B =   K[3][0] * prate  + K[3][1] * qrate + K[3][2] * rrate + K[3][3] * phi + K[3][4] * theta + K[3][5] * psi; 
+
+			R = R * 1.000 + dR;
+			L = L * 1.000 + dL;
+			F = F * 1.000 + dF;
+			B = B * 1.000 + dB;
+
+
+
 
 			//limitter
 			if ( R > max ) R = max;
@@ -395,18 +427,29 @@ int main ( void ) {
 			if ( F < min ) F = min;
 			if ( B > max ) B = max;
 			if ( B < min ) B = min;
+			
+			if(throttle>0.15){
+				pwm.set_duty_cycle ( RIGHT_MOTOR , R );
+				pwm.set_duty_cycle ( LEFT_MOTOR  , L );
+				pwm.set_duty_cycle ( FRONT_MOTOR , F );
+				pwm.set_duty_cycle ( REAR_MOTOR  , B );
+			}
+			else {
+				pwm.set_duty_cycle ( RIGHT_MOTOR , 1.0 );
+				pwm.set_duty_cycle ( LEFT_MOTOR  , 1.0 );
+				pwm.set_duty_cycle ( FRONT_MOTOR , 1.0 );
+				pwm.set_duty_cycle ( REAR_MOTOR  , 1.0 );
 
-			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
-			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
-			pwm.set_duty_cycle ( FRONT_MOTOR , F );
-			pwm.set_duty_cycle ( REAR_MOTOR  , B );
+			}
+			
 
-			printf ( "roll=%f pitch=%f yaw=%f cyaw=%f gx=%f gy=%f gz=%f\n" ,roll ,pitch ,yaw ,cyaw ,gx ,gy ,gz );
+
+			//printf ( "roll=%f pitch=%f yaw=%f cyaw=%f gx=%f gy=%f gz=%f\n R=%f L=%f F=%f B=%f" ,roll ,pitch ,yaw ,cyaw ,gx ,gy ,gz ,R ,L ,F ,B );
 
 			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
-					,ax ,ay ,az ,gx ,gy ,gz ,mx ,my ,mz
-					,roll ,pitch ,yaw
+					,ay ,ax ,az ,prate ,qrate ,rrate ,mx ,my ,mz
+					,phi ,theta ,psi
 					,R ,L ,F ,B
 			       );
 			fs << outstr << endl;

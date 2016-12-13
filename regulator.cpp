@@ -14,7 +14,6 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <linux/joystick.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "../Navio2/C++/Navio/MPU9250.h"
@@ -32,7 +31,6 @@
 #define SERVO_MAX 2.0 /*ms*/
 #define G_SI 9.80665
 #define PI   3.14159
-#define JOY_DEV "/dev/input/js0"
 
 using namespace std;
 
@@ -179,31 +177,6 @@ InertialSensor* create_inertial_sensor ( char *sensor_name ) {
 
 int main ( void ) {
 
-	//DualShock3 setting
-
-	int joy_fd( -1 ) , num_of_axis( 0 ) , num_of_buttons( 0 );
-	char name_of_joystick[80];
-	vector<char> joy_button;
-	vector<int> joy_axis;
-	js_event js;
-
-	if ( ( joy_fd = open( JOY_DEV ,O_RDONLY ) ) < 0 ) {
-		printf( "Failed to open %s" ,JOY_DEV );
-		cerr << "Failed to open " << JOY_DEV << endl;
-		return -1;
-	}
-
-	ioctl( joy_fd , JSIOCGAXES , &num_of_axis );
-	ioctl( joy_fd , JSIOCGBUTTONS , &num_of_buttons );
-	ioctl( joy_fd , JSIOCGNAME(80) , &name_of_joystick );
-
-	joy_button.resize( num_of_buttons , 0 );
-	joy_axis.resize( num_of_axis , 0 );
-
-	printf( "Joystick: %s axis: %d buttons: %d\n" ,name_of_joystick ,num_of_axis ,num_of_buttons );
-
-	fcntl( joy_fd, F_SETFL, O_NONBLOCK );
-
 	//IMU setting
 
 	char sensor_name[] = "mpu";
@@ -266,7 +239,6 @@ int main ( void ) {
 
 	//main loop
 
-	short c = 0 , PauseFlag = 1 , EndFlag = 0;
 	float ad , gd;
 	float min = 1.0 , max = 2.0;
 	float R , L , F , B;
@@ -276,40 +248,15 @@ int main ( void ) {
 	pwm.set_duty_cycle ( FRONT_MOTOR , min );
 	pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
-	while ( EndFlag == 0 ) {
+	while ( 1 ) {
 
 		led.setColor ( Colors :: Red );
 
-		while ( PauseFlag == 0 ) {
 
 			gettimeofday ( &tval , NULL );
 			past_time = now_time;
 			now_time  = 1000000 * tval.tv_sec + tval.tv_usec;
 			interval  = now_time - past_time;
-
-			read ( joy_fd , &js , sizeof ( js_event ) );
-
-			switch ( js.type & ~JS_EVENT_INIT ) {
-
-				case JS_EVENT_AXIS:
-					joy_axis[( int )js.number] = js.value;
-					break;
-
-				case JS_EVENT_BUTTON:
-					joy_button[( int )js.number] = js.value;
-					if ( js.value == 0 ) {
-						c = 0;
-					}
-					if ( js.value == 1 && c == 0 ) {
-						c = 1;
-						if ( joy_button[3] == 1 ) {
-							PauseFlag = 1;
-							printf ( "PAUSE\n" );
-						}
-					}
-					break;
-
-			}
 
 			imuLoop ();
 
@@ -363,48 +310,6 @@ int main ( void ) {
 				gettimeofday ( &tval , NULL );
 				interval = 1000000 * tval.tv_sec + tval.tv_usec - now_time;
 			}while( interval < 2000 );
-
-		}
-
-		pwm.set_duty_cycle ( RIGHT_MOTOR , min );
-		pwm.set_duty_cycle ( LEFT_MOTOR  , min );
-		pwm.set_duty_cycle ( FRONT_MOTOR , min );
-		pwm.set_duty_cycle ( REAR_MOTOR  , min );
-
-		led.setColor ( Colors :: Blue );
-
-		while ( PauseFlag == 1 ) {
-
-			read ( joy_fd , &js , sizeof ( js_event ) );
-
-			switch ( js.type & ~JS_EVENT_INIT ) {
-
-				case JS_EVENT_AXIS:
-					joy_axis[( int )js.number] = js.value;
-					break;
-
-				case JS_EVENT_BUTTON:
-					joy_button[( int )js.number] = js.value;
-					if ( js.value == 0 ) {
-						c = 0;
-					}
-					if ( js.value == 1 && c == 0 ) {
-						c = 1;
-						if ( joy_button[3] == 1 ) {
-							PauseFlag = 0;
-							printf ( "START\n" );
-						}
-						if ( joy_button[0] == 1 ) {
-							PauseFlag = 0;
-							EndFlag = 1;
-							printf ( "END\n" );
-						}
-					}
-					break;
-
-			}
-	
-		}
 
 	}
 
