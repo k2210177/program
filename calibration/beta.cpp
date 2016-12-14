@@ -285,7 +285,7 @@ int main ( void ) {
 
 	short c = 0 , PauseFlag = 1 , EndFlag = 0;
 	float min = 1.0 , max = 2.0;
-	float cyaw;
+	float cyaw,cpitch,croll;
 	float SRx , SRy , SLx , SLy;
 	float throttle;
 	float rroll , rpitch , ryaw;
@@ -307,9 +307,10 @@ int main ( void ) {
 
 		imuLoop();
 
-
-
+		croll = roll;
+		cpitch = pitch;
 		cyaw = yaw;
+		
 
 		while ( PauseFlag == 0 ) {
 
@@ -357,17 +358,23 @@ int main ( void ) {
 			if ( SLy >  1.0 ) SLy =  1.0;
 			if ( SLy < -1.0 ) SLy = -1.0;
 
-			throttle = 2.0*2.0*SRy * 7.0 / 4.0;
+			throttle = SRy;//2.0*SRy * 7.0 / 4.0;
 
 /*			rroll    = SLx;
 			rpitch   = SLy;
 			ryaw     = SRx;
 */
-			dR = 0.1*( -SRx + SLx ) + ( throttle - Rb ) / Ra;
-			dL = 0.1*(  SRx + SLx ) + ( throttle - Lb ) / La;
-			dF = 0.1*(  SRy - SLx ) + ( throttle - Fb ) / Fa;
-			dB = 0.1*( -SRy - SLx ) + ( throttle - Bb ) / Ba;
-
+/*
+			dR = 1.0 + 0.1*( -SRx - SLx ) + ( throttle - Rb ) / Ra;
+			dL = 1.0 + 0.1*(  SRx + SLx ) + ( throttle - Lb ) / La;
+			dF = 1.0 + 0.1*(  SRy - SLx ) + ( throttle - Fb ) / Fa;
+			dB = 1.0 + 0.1*( -SRy - SLx ) + ( throttle - Bb ) / Ba;
+*/
+			dR = 1.0 + 0.5*(  SRx - SLx ) +  throttle*0.5;
+			dL = 1.0 + 0.5*(  SRx + SLx ) +  throttle*0.5;
+			dF = 1.0 + 0.5*( -SRx + SLy ) +  throttle*0.5;
+			dB = 1.0 + 0.5*( -SRx - SLy ) +  throttle*0.5;
+			
 			//limitter
 			if ( dR > max ) dR = max;
 			if ( dR < min ) dR = min;
@@ -379,30 +386,51 @@ int main ( void ) {
 			if ( dB < min ) dB = min;
 
 			imuLoop ();
-
+			roll -=croll;
+			pitch -= cpitch;
 			yaw -= cyaw;
+			
 
 			float phi = pitch;
 			float theta = roll;
-			float psi = yaw;
+			float psi = -yaw;
 			float prate = gy;
 			float qrate = gx;
-			float rrate = gz;
-			
+			float rrate = -gz;
+
+			//limiter
+			if ( phi   >=  PI ) phi   =  PI;
+			if ( phi   <= -PI ) phi   = -PI;
+			if ( theta >=  PI ) theta =  PI;
+			if ( theta <= -PI ) theta = -PI;
+			if ( psi   >=  PI ) psi   =  PI;
+			if ( psi   <= -PI ) psi   = -PI;
+			if ( prate >=  PI ) prate =  PI;
+			if ( prate <= -PI ) prate = -PI;
+			if ( qrate >=  PI ) qrate =  PI;
+			if ( qrate <= -PI ) qrate = -PI;
+			if ( rrate >=  PI ) rrate =  PI;
+			if ( rrate <= -PI ) rrate = -PI;
+
+
 			//if (phi<0.0) phi = phi + PI;
 			//else phi =phi - PI;
 
 
 
-			if(roll>=0.0)roll = roll - PI;
-			else roll = roll + PI;
+			//if(roll>=0.0)roll = roll - PI;
+			//else roll = roll + PI;
 			
 			//regulator
-			float K[4][6]={{  0.790743,   0.002037,  -0.365381,   0.782950,   0.000882,  -0.158761},
-{ -0.629973,   0.002567,  -0.460184,  -0.622084,   0.001110,  -0.199591},
-{  0.001294,  -0.673661,   0.321759,   0.000560,  -0.664731,   0.139443},
-{  0.001151,   0.755087,   0.286439,   0.000499,   0.747082,   0.124556}};
+			float K[4][6]={
+{  0.406874,   0.002815,  -0.583673,   1.204323,   0.002229,  -0.316604},
+{ -0.422812,   0.002730,  -0.564933,  -1.244831,   0.002157,  -0.305974},
+{  0.001093,  -0.425693,   0.413990,   0.000862,  -1.255051,   0.223954},
+{  0.001145,   0.401938,   0.435751,   0.000907,   1.193666,   0.236615}
+ 
 
+
+};
    			R =   K[0][0] * prate  + K[0][1] * qrate + K[0][2] * rrate + K[0][3] * phi + K[0][4] * theta + K[0][5] * psi; 
   			L =   K[1][0] * prate  + K[1][1] * qrate + K[1][2] * rrate + K[1][3] * phi + K[1][4] * theta + K[1][5] * psi; 
    			F =   K[2][0] * prate  + K[2][1] * qrate + K[2][2] * rrate + K[2][3] * phi + K[2][4] * theta + K[2][5] * psi; 
@@ -426,7 +454,7 @@ int main ( void ) {
 			if ( B > max ) B = max;
 			if ( B < min ) B = min;
 			
-			if(throttle>0.15){
+			if(1/*throttle>0.15*/){
 				pwm.set_duty_cycle ( RIGHT_MOTOR , R );
 				pwm.set_duty_cycle ( LEFT_MOTOR  , L );
 				pwm.set_duty_cycle ( FRONT_MOTOR , F );
