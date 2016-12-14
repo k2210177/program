@@ -119,7 +119,7 @@ void imuLoop ( void ) {
 
 	mx -= cmx;
 	my -= cmy;
-	mz -= cmz;
+	//mz -= cmz;
 /*
 	//ax =  -ax;
 	//ay =  -ay;
@@ -363,10 +363,10 @@ int main ( void ) {
 			rpitch   = SLy;
 			ryaw     = SRx;
 */
-			dR = ( throttle - Rb ) / Ra;
-			dL = ( throttle - Lb ) / La;
-			dF = ( throttle - Fb ) / Fa;
-			dB = ( throttle - Bb ) / Ba;
+			dR = 0.1*( -SRx + SLx ) + ( throttle - Rb ) / Ra;
+			dL = 0.1*(  SRx + SLx ) + ( throttle - Lb ) / La;
+			dF = 0.1*(  SRy - SLx ) + ( throttle - Fb ) / Fa;
+			dB = 0.1*( -SRy - SLx ) + ( throttle - Bb ) / Ba;
 
 			//limitter
 			if ( dR > max ) dR = max;
